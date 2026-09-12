@@ -1,0 +1,1003 @@
+{
+  "generatedAt": "2026-09-07T04:28:33.386158+00:00",
+  "dataset": {
+    "name": "Crop Recommendation dataset",
+    "source": "https://raw.githubusercontent.com/atharvaingle/Crop-Recommendation-System/master/Crop_recommendation.csv",
+    "samples": 2200,
+    "classCount": 22,
+    "features": [
+      "N",
+      "P",
+      "K",
+      "temperature",
+      "humidity",
+      "ph",
+      "rainfall"
+    ],
+    "split": "Stratified 80/20 train/test, random_state=42",
+    "crossValidation": "Stratified 5-fold on the training split only",
+    "license": "Not stated by the source repository",
+    "evaluatedAt": "2026-09-07T04:28:33.386181+00:00"
+  },
+  "selectedModel": "Random Forest",
+  "primaryMetric": "Macro-F1 (stratified 5-fold CV on the training split)",
+  "trainSize": 1760,
+  "testSize": 440,
+  "benchmarks": [
+    {
+      "model": "Logistic Regression",
+      "accuracy": 0.9795454545454545,
+      "precision": 0.9808759867583398,
+      "recall": 0.9795454545454546,
+      "macroF1": 0.9794660095103555,
+      "crossValidation": 0.976996932617304,
+      "crossValidationStd": 0.007324434995514067,
+      "defaultParamsCvMacroF1": 0.9678236006626216,
+      "defaultParamsCvStd": 0.006765232166249332
+    },
+    {
+      "model": "KNN",
+      "accuracy": 0.9795454545454545,
+      "precision": 0.9803555030827759,
+      "recall": 0.9795454545454544,
+      "macroF1": 0.9792832328133997,
+      "crossValidation": 0.9650112202843848,
+      "crossValidationStd": 0.012438852654645446,
+      "defaultParamsCvMacroF1": 0.9650112202843848,
+      "defaultParamsCvStd": 0.012438852654645446
+    },
+    {
+      "model": "Decision Tree",
+      "accuracy": 0.9795454545454545,
+      "precision": 0.9805981896890987,
+      "recall": 0.9795454545454546,
+      "macroF1": 0.9794231513743707,
+      "crossValidation": 0.9857953951582197,
+      "crossValidationStd": 0.005088001911744939,
+      "defaultParamsCvMacroF1": 0.9852091419492812,
+      "defaultParamsCvStd": 0.006809619162554993
+    },
+    {
+      "model": "Random Forest",
+      "accuracy": 0.9954545454545455,
+      "precision": 0.9956709956709957,
+      "recall": 0.9954545454545454,
+      "macroF1": 0.9954517027687758,
+      "crossValidation": 0.9942924887437211,
+      "crossValidationStd": 0.004782482693809713,
+      "defaultParamsCvMacroF1": 0.9937033460856128,
+      "defaultParamsCvStd": 0.006139964809894294
+    },
+    {
+      "model": "SVM",
+      "accuracy": 0.9886363636363636,
+      "precision": 0.9895710350255804,
+      "recall": 0.9886363636363634,
+      "macroF1": 0.9886735002267737,
+      "crossValidation": 0.9822118168978686,
+      "crossValidationStd": 0.004895491688668094,
+      "defaultParamsCvMacroF1": 0.9788025126741349,
+      "defaultParamsCvStd": 0.0106237591310153
+    },
+    {
+      "model": "Gradient Boosting",
+      "accuracy": 0.9886363636363636,
+      "precision": 0.989742141916055,
+      "recall": 0.9886363636363634,
+      "macroF1": 0.9887226097483732,
+      "crossValidation": 0.9868609061859882,
+      "crossValidationStd": 0.0035748552257011713,
+      "defaultParamsCvMacroF1": 0.9868609061859882,
+      "defaultParamsCvStd": 0.0035748552257011713
+    }
+  ],
+  "classes": [
+    "apple",
+    "banana",
+    "blackgram",
+    "chickpea",
+    "coconut",
+    "coffee",
+    "cotton",
+    "grapes",
+    "jute",
+    "kidneybeans",
+    "lentil",
+    "maize",
+    "mango",
+    "mothbeans",
+    "mungbean",
+    "muskmelon",
+    "orange",
+    "papaya",
+    "pigeonpeas",
+    "pomegranate",
+    "rice",
+    "watermelon"
+  ],
+  "confusionMatrix": [
+    [
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      19,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      19,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20
+    ]
+  ],
+  "perClass": [
+    {
+      "className": "apple",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "banana",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "blackgram",
+      "precision": 1.0,
+      "recall": 0.95,
+      "f1": 0.9743589743589743,
+      "support": 20
+    },
+    {
+      "className": "chickpea",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "coconut",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "coffee",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "cotton",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "grapes",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "jute",
+      "precision": 0.9523809523809523,
+      "recall": 1.0,
+      "f1": 0.975609756097561,
+      "support": 20
+    },
+    {
+      "className": "kidneybeans",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "lentil",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "maize",
+      "precision": 0.9523809523809523,
+      "recall": 1.0,
+      "f1": 0.975609756097561,
+      "support": 20
+    },
+    {
+      "className": "mango",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "mothbeans",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "mungbean",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "muskmelon",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "orange",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "papaya",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "pigeonpeas",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "pomegranate",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    {
+      "className": "rice",
+      "precision": 1.0,
+      "recall": 0.95,
+      "f1": 0.9743589743589743,
+      "support": 20
+    },
+    {
+      "className": "watermelon",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    }
+  ],
+  "featureImportance": [
+    {
+      "feature": "rainfall",
+      "importance": 0.21964086696980523
+    },
+    {
+      "feature": "humidity",
+      "importance": 0.21705796499206514
+    },
+    {
+      "feature": "K",
+      "importance": 0.18081334854665876
+    },
+    {
+      "feature": "P",
+      "importance": 0.1513421883084258
+    },
+    {
+      "feature": "N",
+      "importance": 0.10335637977565043
+    },
+    {
+      "feature": "temperature",
+      "importance": 0.07548469157356018
+    },
+    {
+      "feature": "ph",
+      "importance": 0.05230455983383439
+    }
+  ],
+  "permutationImportance": [
+    {
+      "feature": "humidity",
+      "importance": 0.3295124447467214,
+      "std": 0.01954196900686039
+    },
+    {
+      "feature": "N",
+      "importance": 0.2156605215540636,
+      "std": 0.019767370246665014
+    },
+    {
+      "feature": "rainfall",
+      "importance": 0.17673848287144237,
+      "std": 0.011153877126573257
+    },
+    {
+      "feature": "K",
+      "importance": 0.1716486941085412,
+      "std": 0.011576168155991051
+    },
+    {
+      "feature": "P",
+      "importance": 0.11362879829918113,
+      "std": 0.014704493950504003
+    },
+    {
+      "feature": "ph",
+      "importance": 0.010753817124075405,
+      "std": 0.004495390746417798
+    },
+    {
+      "feature": "temperature",
+      "importance": 0.006381617026525422,
+      "std": 0.0039340246699313885
+    }
+  ],
+  "tuning": [
+    {
+      "model": "Logistic Regression",
+      "parametersEvaluated": [
+        "model__C"
+      ],
+      "bestParams": {
+        "model__C": "10.0"
+      },
+      "bestCvScore": 0.976996932617304
+    },
+    {
+      "model": "KNN",
+      "parametersEvaluated": [
+        "model__n_neighbors"
+      ],
+      "bestParams": {
+        "model__n_neighbors": "5"
+      },
+      "bestCvScore": 0.9650112202843848
+    },
+    {
+      "model": "Decision Tree",
+      "parametersEvaluated": [
+        "model__max_depth",
+        "model__min_samples_leaf"
+      ],
+      "bestParams": {
+        "model__max_depth": "None",
+        "model__min_samples_leaf": "2"
+      },
+      "bestCvScore": 0.9857953951582197
+    },
+    {
+      "model": "Random Forest",
+      "parametersEvaluated": [
+        "model__max_depth",
+        "model__n_estimators"
+      ],
+      "bestParams": {
+        "model__max_depth": "None",
+        "model__n_estimators": "200"
+      },
+      "bestCvScore": 0.9942924887437211
+    },
+    {
+      "model": "SVM",
+      "parametersEvaluated": [
+        "model__C",
+        "model__gamma"
+      ],
+      "bestParams": {
+        "model__C": "10.0",
+        "model__gamma": "scale"
+      },
+      "bestCvScore": 0.9822118168978686
+    },
+    {
+      "model": "Gradient Boosting",
+      "parametersEvaluated": [
+        "model__learning_rate",
+        "model__n_estimators"
+      ],
+      "bestParams": {
+        "model__learning_rate": "0.1",
+        "model__n_estimators": "100"
+      },
+      "bestCvScore": 0.9868609061859882
+    }
+  ],
+  "ablation": [
+    {
+      "featureSet": "All features",
+      "accuracy": 0.99375,
+      "macroF1": 0.9937033460856128,
+      "crossValidation": 0.9937033460856128
+    },
+    {
+      "featureSet": "Without N-P-K",
+      "accuracy": 0.9602272727272727,
+      "macroF1": 0.9599065033266138,
+      "crossValidation": 0.9599065033266138
+    },
+    {
+      "featureSet": "Without pH",
+      "accuracy": 0.9943181818181819,
+      "macroF1": 0.9942754288243334,
+      "crossValidation": 0.9942754288243334
+    },
+    {
+      "featureSet": "Weather only (no soil data)",
+      "accuracy": 0.9107954545454546,
+      "macroF1": 0.9101292723126875,
+      "crossValidation": 0.9101292723126875
+    },
+    {
+      "featureSet": "Soil only (no weather data)",
+      "accuracy": 0.8056818181818182,
+      "macroF1": 0.8030151352567412,
+      "crossValidation": 0.8030151352567412
+    }
+  ],
+  "missingDataExperiment": [
+    {
+      "scenario": "All features",
+      "accuracy": 0.99375,
+      "macroF1": 0.9937033460856128
+    },
+    {
+      "scenario": "Without N-P-K",
+      "accuracy": 0.9602272727272727,
+      "macroF1": 0.9599065033266138
+    },
+    {
+      "scenario": "Without pH",
+      "accuracy": 0.9943181818181819,
+      "macroF1": 0.9942754288243334
+    },
+    {
+      "scenario": "Weather only (no soil data)",
+      "accuracy": 0.9107954545454546,
+      "macroF1": 0.9101292723126875
+    },
+    {
+      "scenario": "Soil only (no weather data)",
+      "accuracy": 0.8056818181818182,
+      "macroF1": 0.8030151352567412
+    }
+  ],
+  "shap": [],
+  "lime": [],
+  "limitations": "Metrics come from a single benchmark dataset with a clean, balanced class distribution. They do not guarantee accuracy on real fields."
+}

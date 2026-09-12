@@ -1,0 +1,38 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: agrismart-backend
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/agrismart}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: AgriSmartHikariCP
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 2000
+      # -1 bypasses initial connection failure on startup so the app can start
+      # and serve /api/health even when local PostgreSQL is not running.
+      initialization-fail-timeout: -1
+
+  jpa:
+    open-in-view: false
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    # 'update' is for local development only. Production must use migrations (e.g. Flyway).
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    properties:
+      hibernate:
+        boot:
+          allow_jdbc_metadata_access: false
+        format_sql: false
+        show_sql: false
+
+agrismart:
+  cors:
+    allowed-origins: ${FRONTEND_URL:http://localhost:3000,http://localhost:5173}
