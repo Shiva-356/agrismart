@@ -335,7 +335,11 @@ function ChartSection({ data }: { data: MlEvaluationData }) {
         <div className="h-96 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 16 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="var(--color-border)"
+                horizontal={false}
+              />
               <XAxis
                 type="number"
                 domain={[0, 1]}
@@ -402,7 +406,9 @@ function CrossValidationSection({ data }: { data: MlEvaluationData }) {
               </li>
             ))}
           </ul>
-          {rows.every((m) => m.crossValidationStd === null || m.crossValidationStd === undefined) ? (
+          {rows.every(
+            (m) => m.crossValidationStd === null || m.crossValidationStd === undefined,
+          ) ? (
             <p className="mt-3 text-xs text-muted-foreground">{t.mlEval.cvStdUnavailable}</p>
           ) : null}
         </>
@@ -430,11 +436,18 @@ function ConfusionSection({ data }: { data: MlEvaluationData }) {
             <caption className="sr-only">{t.mlEval.confusionMatrix}</caption>
             <thead>
               <tr>
-                <th scope="col" className="sticky left-0 z-10 bg-card px-3 py-2 text-left text-xs font-semibold text-muted-foreground">
+                <th
+                  scope="col"
+                  className="sticky left-0 z-10 bg-card px-3 py-2 text-left text-xs font-semibold text-muted-foreground"
+                >
                   {t.mlEval.actual} \ {t.mlEval.predicted}
                 </th>
                 {classes.map((c) => (
-                  <th key={c} scope="col" className="px-3 py-2 text-xs font-semibold whitespace-nowrap">
+                  <th
+                    key={c}
+                    scope="col"
+                    className="px-3 py-2 text-xs font-semibold whitespace-nowrap"
+                  >
                     {c}
                   </th>
                 ))}
@@ -453,7 +466,9 @@ function ConfusionSection({ data }: { data: MlEvaluationData }) {
                     <td
                       key={`${i}-${j}`}
                       className="px-3 py-2 text-center tabular-nums"
-                      style={{ background: `color-mix(in srgb, var(--color-chart-1) ${(v / max) * 45}%, transparent)` }}
+                      style={{
+                        background: `color-mix(in srgb, var(--color-chart-1) ${(v / max) * 45}%, transparent)`,
+                      }}
                       title={`${t.mlEval.actual}: ${classes[i]} · ${t.mlEval.predicted}: ${classes[j]} · ${v}`}
                     >
                       {v}
@@ -501,20 +516,36 @@ function PerClassSection({ data }: { data: MlEvaluationData }) {
                     {t.mlEval.model}
                   </button>
                 </TableHead>
-                <TableHead scope="col" className="text-right">{t.mlEval.precision}</TableHead>
-                <TableHead scope="col" className="text-right">{t.mlEval.recall}</TableHead>
-                <TableHead scope="col" className="text-right">{t.mlEval.macroF1}</TableHead>
-                <TableHead scope="col" className="text-right">{t.mlEval.support}</TableHead>
+                <TableHead scope="col" className="text-right">
+                  {t.mlEval.precision}
+                </TableHead>
+                <TableHead scope="col" className="text-right">
+                  {t.mlEval.recall}
+                </TableHead>
+                <TableHead scope="col" className="text-right">
+                  {t.mlEval.macroF1}
+                </TableHead>
+                <TableHead scope="col" className="text-right">
+                  {t.mlEval.support}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sorted.map((r) => (
                 <TableRow key={r.className}>
                   <TableCell className="font-medium whitespace-nowrap">{r.className}</TableCell>
-                  <TableCell className="text-right tabular-nums"><MetricValue value={ratio(r.precision)} /></TableCell>
-                  <TableCell className="text-right tabular-nums"><MetricValue value={ratio(r.recall)} /></TableCell>
-                  <TableCell className="text-right tabular-nums"><MetricValue value={ratio(r.f1)} /></TableCell>
-                  <TableCell className="text-right tabular-nums"><MetricValue value={r.support} /></TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    <MetricValue value={ratio(r.precision)} />
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    <MetricValue value={ratio(r.recall)} />
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    <MetricValue value={ratio(r.f1)} />
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    <MetricValue value={r.support} />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -538,7 +569,11 @@ function ImportanceSection({ data }: { data: MlEvaluationData }) {
         <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={fi} layout="vertical" margin={{ left: 8, right: 16 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="var(--color-border)"
+                horizontal={false}
+              />
               <XAxis
                 type="number"
                 tickLine={false}
@@ -610,18 +645,30 @@ function AblationSection({ data }: { data: MlEvaluationData }) {
             <TableHeader>
               <TableRow>
                 <TableHead scope="col">{t.mlEval.featureSet}</TableHead>
-                <TableHead scope="col" className="text-right">{t.mlEval.accuracy}</TableHead>
-                <TableHead scope="col" className="text-right">{t.mlEval.macroF1}</TableHead>
-                <TableHead scope="col" className="text-right">{t.mlEval.cvScore}</TableHead>
+                <TableHead scope="col" className="text-right">
+                  {t.mlEval.accuracy}
+                </TableHead>
+                <TableHead scope="col" className="text-right">
+                  {t.mlEval.macroF1}
+                </TableHead>
+                <TableHead scope="col" className="text-right">
+                  {t.mlEval.cvScore}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {ablation.map((a) => (
                 <TableRow key={a.featureSet}>
                   <TableCell className="font-medium whitespace-nowrap">{a.featureSet}</TableCell>
-                  <TableCell className="text-right tabular-nums"><MetricValue value={ratio(a.accuracy)} /></TableCell>
-                  <TableCell className="text-right tabular-nums"><MetricValue value={ratio(a.macroF1)} /></TableCell>
-                  <TableCell className="text-right tabular-nums"><MetricValue value={ratio(a.crossValidation)} /></TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    <MetricValue value={ratio(a.accuracy)} />
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    <MetricValue value={ratio(a.macroF1)} />
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    <MetricValue value={ratio(a.crossValidation)} />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -637,16 +684,24 @@ function AblationSection({ data }: { data: MlEvaluationData }) {
               <TableHeader>
                 <TableRow>
                   <TableHead scope="col">{t.mlEval.scenario}</TableHead>
-                  <TableHead scope="col" className="text-right">{t.mlEval.accuracy}</TableHead>
-                  <TableHead scope="col" className="text-right">{t.mlEval.macroF1}</TableHead>
+                  <TableHead scope="col" className="text-right">
+                    {t.mlEval.accuracy}
+                  </TableHead>
+                  <TableHead scope="col" className="text-right">
+                    {t.mlEval.macroF1}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {missing.map((m) => (
                   <TableRow key={m.scenario}>
                     <TableCell className="font-medium whitespace-nowrap">{m.scenario}</TableCell>
-                    <TableCell className="text-right tabular-nums"><MetricValue value={ratio(m.accuracy)} /></TableCell>
-                    <TableCell className="text-right tabular-nums"><MetricValue value={ratio(m.macroF1)} /></TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      <MetricValue value={ratio(m.accuracy)} />
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      <MetricValue value={ratio(m.macroF1)} />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

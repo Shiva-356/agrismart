@@ -15,7 +15,6 @@ import { AppShell } from "@/components/layout/AppShell";
 import { I18nProvider } from "@/i18n";
 import { Toaster } from "@/components/ui/sonner";
 
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -91,7 +90,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-
     ],
     links: [
       {
@@ -136,4 +134,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

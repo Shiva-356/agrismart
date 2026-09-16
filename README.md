@@ -54,4 +54,3 @@ This repository contains three coordinated modules:
 1. **Frontend (`src/`):** React 19, TanStack Start, TanStack Router, Tailwind CSS v4, and i18n support.
 2. **Machine Learning (`ml/`):** Scikit-Learn Random Forest pipeline, benchmark dataset, training script, and FastAPI inference service (`ml/api/main.py`).
 3. **Backend (`backend/`):** Spring Boot 3.3.5 REST API service (Java 17, Spring Web, Spring Data JPA, PostgreSQL). See [`backend/README.md`](file:///f:/agrismart_solutions/agri-wisdom-tool-main/backend/README.md) for startup and configuration.
-

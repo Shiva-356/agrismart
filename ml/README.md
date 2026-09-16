@@ -44,21 +44,21 @@ uvicorn ml.api.main:app --reload --port 8000
 
 ## Endpoints
 
-| Method | Path          | Purpose                                        |
-| ------ | ------------- | ---------------------------------------------- |
-| GET    | `/health`     | Service + model-loaded status                  |
-| GET    | `/evaluation` | The real `evaluation_results.json`             |
-| GET    | `/dataset`    | Dataset provenance metadata                    |
+| Method | Path          | Purpose                                              |
+| ------ | ------------- | ---------------------------------------------------- |
+| GET    | `/health`     | Service + model-loaded status                        |
+| GET    | `/evaluation` | The real `evaluation_results.json`                   |
+| GET    | `/dataset`    | Dataset provenance metadata                          |
 | POST   | `/predict`    | Crop prediction from N,P,K,temp,humidity,ph,rainfall |
 
 ## Artifacts
 
-| File                                  | Contents                                     |
-| ------------------------------------- | -------------------------------------------- |
-| `ml/artifacts/dataset_metadata.json`  | Provenance, class distribution, environment  |
-| `ml/artifacts/evaluation_results.json`| All measured metrics                          |
-| `ml/artifacts/model.joblib`           | Fitted selected pipeline (Python inference)   |
-| `ml/artifacts/model_export.json`      | Same forest exported for the JS runtime       |
+| File                                   | Contents                                    |
+| -------------------------------------- | ------------------------------------------- |
+| `ml/artifacts/dataset_metadata.json`   | Provenance, class distribution, environment |
+| `ml/artifacts/evaluation_results.json` | All measured metrics                        |
+| `ml/artifacts/model.joblib`            | Fitted selected pipeline (Python inference) |
+| `ml/artifacts/model_export.json`       | Same forest exported for the JS runtime     |
 
 Copies of the two JSON artifacts and the model export are checked into
 `src/services/ml/` so the web app serves the real results and can run the real

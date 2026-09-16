@@ -22,9 +22,7 @@ import { appointmentsService, farmsService, providersService } from "@/services"
 
 export const Route = createFileRoute("/appointments/book")({
   validateSearch: (search: Record<string, unknown>): { providerId?: string } =>
-    typeof search["providerId"] === "string"
-      ? { providerId: search["providerId"] as string }
-      : {},
+    typeof search["providerId"] === "string" ? { providerId: search["providerId"] as string } : {},
   head: () => ({
     meta: [
       { title: "Book a Soil Test — AgriSmart" },
@@ -154,8 +152,8 @@ function BookAppointmentPage() {
             This is demonstration mode — no real appointment was made
           </h2>
           <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
-            Your request details were checked, but no testing centre has received or confirmed
-            them. Real bookings will be sent once AgriSmart is connected to live testing centres.
+            Your request details were checked, but no testing centre has received or confirmed them.
+            Real bookings will be sent once AgriSmart is connected to live testing centres.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => booking.reset()}>
@@ -175,7 +173,11 @@ function BookAppointmentPage() {
       ) : null}
 
       {!booking.isSuccess ? (
-        <form onSubmit={submit} noValidate className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-start">
+        <form
+          onSubmit={submit}
+          noValidate
+          className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-start"
+        >
           <div className="card-surface space-y-5 p-6">
             <Field label="Testing centre" error={errors["provider"]} htmlFor="provider">
               <Select value={selected} onValueChange={setSelected}>
@@ -206,10 +208,20 @@ function BookAppointmentPage() {
 
             <div className="grid gap-5 sm:grid-cols-2">
               <Field label="Preferred date" error={errors["date"]} htmlFor="date">
-                <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                <Input
+                  id="date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                />
               </Field>
               <Field label="Preferred time" error={errors["time"]} htmlFor="time">
-                <Input id="time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+                <Input
+                  id="time"
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                />
               </Field>
             </div>
 
@@ -248,9 +260,7 @@ function BookAppointmentPage() {
               <Summary label="Centre" value={provider?.name} />
               <Summary
                 label="Testing service"
-                value={
-                  method === "lab_visit" ? "Visit the centre" : "Sample collection at my farm"
-                }
+                value={method === "lab_visit" ? "Visit the centre" : "Sample collection at my farm"}
               />
               <Summary label="Date" value={date} />
               <Summary label="Time" value={time} />

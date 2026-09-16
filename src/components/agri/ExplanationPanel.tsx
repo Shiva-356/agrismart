@@ -72,7 +72,10 @@ export function ExplanationPanel({
             <ul className="mt-2 space-y-1.5">
               {result.dataUsed.map((d) => (
                 <li key={d} className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <CheckCircle2
+                    aria-hidden="true"
+                    className="mt-0.5 size-4 shrink-0 text-primary"
+                  />
                   <span className="min-w-0">{d}</span>
                 </li>
               ))}

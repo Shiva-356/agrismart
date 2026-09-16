@@ -39,7 +39,10 @@ export function AppointmentTimeline({
   const currentIndex = ORDER.indexOf(appointment.status);
 
   return (
-    <section className={cn("card-surface p-5", className)} aria-labelledby="appointment-timeline-title">
+    <section
+      className={cn("card-surface p-5", className)}
+      aria-labelledby="appointment-timeline-title"
+    >
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
         <div className="min-w-0">
           <h2

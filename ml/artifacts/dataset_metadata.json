@@ -53,15 +53,7 @@
     "rice": 100,
     "watermelon": 100
   },
-  "features": [
-    "N",
-    "P",
-    "K",
-    "temperature",
-    "humidity",
-    "ph",
-    "rainfall"
-  ],
+  "features": ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"],
   "missingValues": 0,
   "duplicateRows": 0,
   "split": "Stratified 80/20 train/test, random_state=42",

@@ -11,7 +11,8 @@ export const Route = createFileRoute("/register")({
       { title: "Sign Up — AgriSmart" },
       {
         name: "description",
-        content: "Create a free AgriSmart account and get crop recommendations tailored to your land.",
+        content:
+          "Create a free AgriSmart account and get crop recommendations tailored to your land.",
       },
       { property: "og:title", content: "Sign Up — AgriSmart" },
       { property: "og:description", content: "Create a free AgriSmart account in seconds." },

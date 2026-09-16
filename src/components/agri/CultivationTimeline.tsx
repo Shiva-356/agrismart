@@ -60,7 +60,10 @@ export function CultivationTimeline({
                 <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{stage.what}</p>
                 <dl className="mt-3 grid gap-2 sm:grid-cols-2">
                   <div className="flex items-start gap-2">
-                    <CalendarRange aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <CalendarRange
+                      aria-hidden="true"
+                      className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                    />
                     <div className="min-w-0">
                       <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         When
@@ -69,7 +72,10 @@ export function CultivationTimeline({
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
-                    <HelpCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <HelpCircle
+                      aria-hidden="true"
+                      className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                    />
                     <div className="min-w-0">
                       <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         Why

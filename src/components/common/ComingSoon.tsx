@@ -17,12 +17,12 @@ export function ComingSoon({
   const t = useT();
   return (
     <div className="space-y-8">
-      <PageHeader title={title} {...(description ? { description } : {})} {...(icon ? { icon } : {})} />
-      <EmptyState
-        icon={Hammer}
-        title={t.pages.preparing}
-        description={t.pages.preparingHint}
+      <PageHeader
+        title={title}
+        {...(description ? { description } : {})}
+        {...(icon ? { icon } : {})}
       />
+      <EmptyState icon={Hammer} title={t.pages.preparing} description={t.pages.preparingHint} />
     </div>
   );
 }

@@ -21,8 +21,7 @@ export function AppShell({
   className?: string | undefined;
 }) {
   const t = useT();
-  const maxWidth =
-    width === "full" ? "max-w-none" : width === "wide" ? "max-w-7xl" : "max-w-6xl";
+  const maxWidth = width === "full" ? "max-w-none" : width === "wide" ? "max-w-7xl" : "max-w-6xl";
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

@@ -54,7 +54,9 @@ export function RecommendationCard({
                 Recommended crop
               </p>
             ) : null}
-            <h3 className="truncate text-lg font-semibold tracking-tight text-foreground">{r.crop}</h3>
+            <h3 className="truncate text-lg font-semibold tracking-tight text-foreground">
+              {r.crop}
+            </h3>
             <p className="mt-0.5 truncate text-sm text-muted-foreground">{r.suitability}</p>
           </div>
         </div>
@@ -70,7 +72,9 @@ export function RecommendationCard({
         {r.weatherSuitability ? (
           <StatusBadge label={`Weather: ${r.weatherSuitability}`} tone="neutral" />
         ) : null}
-        {r.soilSuitability ? <StatusBadge label={`Soil: ${r.soilSuitability}`} tone="neutral" /> : null}
+        {r.soilSuitability ? (
+          <StatusBadge label={`Soil: ${r.soilSuitability}`} tone="neutral" />
+        ) : null}
       </div>
 
       {r.confidencePct !== null && r.confidencePct !== undefined ? (

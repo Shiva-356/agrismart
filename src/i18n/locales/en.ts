@@ -111,7 +111,8 @@ export const en = {
     cvUnavailable: "Cross-validation result not available.",
     cvStdUnavailable: "Standard deviation is not reported by this data source.",
     confusionMatrix: "Confusion matrix",
-    confusionHint: "Rows are actual classes, columns are predicted classes. Scroll horizontally to see all classes.",
+    confusionHint:
+      "Rows are actual classes, columns are predicted classes. Scroll horizontally to see all classes.",
     confusionUnavailable: "Confusion matrix not available for this evaluation.",
     actual: "Actual",
     predicted: "Predicted",

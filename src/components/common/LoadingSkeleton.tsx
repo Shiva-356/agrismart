@@ -39,7 +39,11 @@ export function LoadingSkeleton({
 
   if (variant === "table") {
     return (
-      <div className={cn("card-surface overflow-hidden", className)} aria-busy="true" aria-live="polite">
+      <div
+        className={cn("card-surface overflow-hidden", className)}
+        aria-busy="true"
+        aria-live="polite"
+      >
         <Skeleton className="h-11 w-full rounded-none" />
         <div className="space-y-px">
           {Array.from({ length: lines }).map((_, i) => (
@@ -54,7 +58,10 @@ export function LoadingSkeleton({
     return (
       <div className={cn("space-y-3", className)} aria-busy="true" aria-live="polite">
         {Array.from({ length: Math.max(count, lines) }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
+          <div
+            key={i}
+            className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4"
+          >
             <Skeleton className="size-10 shrink-0 rounded-xl" />
             <div className="min-w-0 flex-1 space-y-2">
               <Skeleton className="h-3.5 w-1/3" />
@@ -67,7 +74,11 @@ export function LoadingSkeleton({
   }
 
   return (
-    <div className={cn("grid gap-4", count > 1 && "sm:grid-cols-2", className)} aria-busy="true" aria-live="polite">
+    <div
+      className={cn("grid gap-4", count > 1 && "sm:grid-cols-2", className)}
+      aria-busy="true"
+      aria-live="polite"
+    >
       {items.map((_, i) => (
         <div key={i} className="card-surface p-5">
           <div className="flex items-center gap-3">

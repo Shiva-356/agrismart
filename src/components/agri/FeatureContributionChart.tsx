@@ -48,7 +48,9 @@ export function FeatureContributionChart({
             <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{description}</p>
           ) : null}
         </div>
-        {showBadge ? <DataSourceBadge source={source} fetchedAt={fetchedAt} className="shrink-0" /> : null}
+        {showBadge ? (
+          <DataSourceBadge source={source} fetchedAt={fetchedAt} className="shrink-0" />
+        ) : null}
       </div>
 
       {data.length === 0 ? (
@@ -62,7 +64,11 @@ export function FeatureContributionChart({
         <>
           <div className="mt-4 h-[clamp(180px,40vw,280px)] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} layout="vertical" margin={{ top: 4, right: 12, bottom: 4, left: 4 }}>
+              <BarChart
+                data={data}
+                layout="vertical"
+                margin={{ top: 4, right: 12, bottom: 4, left: 4 }}
+              >
                 <XAxis
                   type="number"
                   tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
@@ -100,11 +106,13 @@ export function FeatureContributionChart({
           </div>
           <ul className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
             <li className="flex items-center gap-1.5">
-              <span aria-hidden="true" className="size-2.5 rounded-sm bg-chart-1" /> Supports the crop
+              <span aria-hidden="true" className="size-2.5 rounded-sm bg-chart-1" /> Supports the
+              crop
             </li>
             {hasNegative ? (
               <li className="flex items-center gap-1.5">
-                <span aria-hidden="true" className="size-2.5 rounded-sm bg-chart-5" /> Works against it
+                <span aria-hidden="true" className="size-2.5 rounded-sm bg-chart-5" /> Works against
+                it
               </li>
             ) : null}
           </ul>

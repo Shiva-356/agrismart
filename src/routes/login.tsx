@@ -9,7 +9,10 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Login — AgriSmart" },
-      { name: "description", content: "Sign in to your AgriSmart account to view your crop recommendations and history." },
+      {
+        name: "description",
+        content: "Sign in to your AgriSmart account to view your crop recommendations and history.",
+      },
       { property: "og:title", content: "Login — AgriSmart" },
       { property: "og:description", content: "Sign in to your AgriSmart farming dashboard." },
     ],

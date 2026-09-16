@@ -34,7 +34,9 @@ export function ProviderCard({
             <TestTube2 aria-hidden="true" className="size-5" />
           </span>
           <div className="min-w-0">
-            <h3 className="truncate text-base font-semibold tracking-tight text-foreground">{p.name}</h3>
+            <h3 className="truncate text-base font-semibold tracking-tight text-foreground">
+              {p.name}
+            </h3>
             <p className="mt-0.5 truncate text-sm text-muted-foreground">{p.type}</p>
           </div>
         </div>

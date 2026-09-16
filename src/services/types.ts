@@ -71,12 +71,7 @@ export type Provider = {
 };
 
 export type AppointmentStatus =
-  | "booked"
-  | "confirmed"
-  | "sample_collected"
-  | "testing"
-  | "report_ready"
-  | "completed";
+  "booked" | "confirmed" | "sample_collected" | "testing" | "report_ready" | "completed";
 
 export type Appointment = {
   id: string;

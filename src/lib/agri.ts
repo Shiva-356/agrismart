@@ -61,7 +61,9 @@ export function generateRecommendations(input: FarmInput): Recommendation[] {
       confidence,
       expectedYield: `${(2.4 + i * 0.6).toFixed(1)} t/acre`,
       waterNeed: `${Math.round(320 + i * 90)} mm/season`,
-      estimatedProfit: money(Math.max(budgetPerAcre * (1.35 - i * 0.12), 1) * Math.max(input.landArea, 1)),
+      estimatedProfit: money(
+        Math.max(budgetPerAcre * (1.35 - i * 0.12), 1) * Math.max(input.landArea, 1),
+      ),
       rationale: mlDriven
         ? `Gradient-boosted model ranked ${crop} highest for ${input.soilType} soil with ~${Math.round(waterPerAcre)} units water/acre.`
         : `Agronomic rule set: ${input.soilType} soil with a ${money(budgetPerAcre)}/acre budget suits ${crop} rotation.`,

@@ -7,6 +7,7 @@ Backend service foundation for the AgriSmart AI-Powered Smart Farming Recommenda
 ## 1. Purpose
 
 The Spring Boot backend acts as the core business logic, persistence, and orchestration engine for AgriSmart:
+
 - Serves REST APIs for the React/TanStack frontend.
 - Connects to PostgreSQL for persistent domain data (farms, soil test appointments, soil health reports, recommendations).
 - Orchestrates recommendation pipelines by calling the FastAPI ML inference service via `CropMLClientService` (scheduled for Phase 4B-3).
@@ -33,14 +34,63 @@ com.agrismart
 ├── config/
 │   └── CorsConfig.java             # Explicit CORS policy configuration
 ├── controller/
-│   └── HealthController.java       # Service & database health endpoints
+│   ├── HealthController.java       # Service & database health endpoints
+│   ├── ProviderController.java     # REST API for soil testing providers
+│   ├── AppointmentController.java  # REST API for booking & appointment lifecycle
+│   └── SoilReportController.java   # REST API for authentic soil report ingestion & queries
 ├── dto/
 │   ├── HealthResponse.java         # DTO for service health
 │   ├── DatabaseHealthResponse.java # DTO for database connectivity health
-│   └── ValidationExampleRequest.java # Example DTO demonstrating validation conventions
-└── exception/
-    ├── ApiErrorResponse.java       # Uniform error payload schema
-    └── GlobalExceptionHandler.java # @RestControllerAdvice for consistent JSON errors
+│   ├── ValidationExampleRequest.java # Example DTO demonstrating validation conventions
+│   ├── provider/
+│   │   ├── CreateProviderRequest.java
+│   │   ├── UpdateProviderRequest.java
+│   │   ├── ProviderResponse.java
+│   │   └── ProviderSummaryResponse.java
+│   ├── appointment/
+│   │   ├── CreateAppointmentRequest.java
+│   │   ├── UpdateAppointmentStatusRequest.java
+│   │   ├── CancelAppointmentRequest.java
+│   │   ├── AppointmentResponse.java
+│   │   └── FarmSummaryResponse.java
+│   └── soilreport/
+│       ├── CreateSoilReportRequest.java
+│       ├── VerifySoilReportRequest.java
+│       ├── SoilMeasurementAvailability.java
+│       ├── SoilReportResponse.java
+│       └── SoilReportSummaryResponse.java
+├── entity/
+│   ├── User.java                   # Core account entity
+│   ├── Farm.java                   # Farmer land parcel entity
+│   ├── SoilTestingProvider.java    # Lab & testing provider entity
+│   ├── Appointment.java            # Appointment booking & status entity
+│   ├── AppointmentStatus.java      # Controlled appointment lifecycle enum
+│   ├── AppointmentMethod.java      # Sample collection method enum
+│   └── SoilReport.java             # Authentic lab soil test report entity
+├── exception/
+│   ├── ApiErrorResponse.java       # Uniform error payload schema
+│   ├── GlobalExceptionHandler.java # @RestControllerAdvice for consistent JSON errors
+│   ├── ResourceNotFoundException.java # HTTP 404 handler
+│   ├── InvalidStatusTransitionException.java # HTTP 409 handler
+│   └── BusinessRuleViolationException.java # HTTP 422 handler
+├── repository/
+│   ├── UserRepository.java         # Spring Data JPA User repository
+│   ├── FarmRepository.java         # Spring Data JPA Farm repository
+│   ├── SoilTestingProviderRepository.java # Provider repository with JpaSpecificationExecutor
+│   ├── AppointmentRepository.java  # Appointment repository with JpaSpecificationExecutor
+│   └── SoilReportRepository.java   # Soil report repository with ordered queries
+└── service/
+    ├── ProviderService.java        # Provider domain business logic & filtering
+    ├── AppointmentService.java     # Appointment lifecycle state machine & bookings
+    └── SoilReportService.java      # Soil report write-once persistence & verification
+```
+
+Resources:
+```
+src/main/resources/
+├── application.yml
+└── db/migration/
+    └── V1__initial_schema.sql      # Flyway initial schema definition
 ```
 
 ---
@@ -49,14 +99,15 @@ com.agrismart
 
 The application reads configuration from `src/main/resources/application.yml` with support for environment overrides:
 
-| Variable | Default Value | Description |
-| :--- | :--- | :--- |
-| `SERVER_PORT` | `8080` | Port on which the Spring Boot Tomcat server listens |
-| `DB_URL` | `jdbc:postgresql://localhost:5432/agrismart` | PostgreSQL JDBC connection URL |
-| `DB_USERNAME` | `postgres` | Database username |
-| `DB_PASSWORD` | `postgres` | Database password |
-| `JPA_DDL_AUTO` | `update` | DDL schema mode (`update` for dev only; production should use Flyway) |
-| `FRONTEND_URL` | `http://localhost:3000,http://localhost:5173` | Allowed CORS origins for the frontend application |
+| Variable         | Default Value                                 | Description                                                           |
+| :--------------- | :-------------------------------------------- | :-------------------------------------------------------------------- |
+| `SERVER_PORT`    | `8080`                                        | Port on which the Spring Boot Tomcat server listens                   |
+| `DB_URL`         | `jdbc:postgresql://localhost:5432/agrismart`  | PostgreSQL JDBC connection URL                                        |
+| `DB_USERNAME`    | `postgres`                                    | Database username                                                     |
+| `DB_PASSWORD`    | `postgres`                                    | Database password                                                     |
+| `JPA_DDL_AUTO`   | `validate`                                    | DDL schema mode (`validate` when Flyway manages migrations)           |
+| `FLYWAY_ENABLED` | `true`                                        | Enable or disable Flyway database migration runs                      |
+| `FRONTEND_URL`   | `http://localhost:3000,http://localhost:5173` | Allowed CORS origins for the frontend application                     |
 
 ---
 
@@ -77,20 +128,25 @@ If PostgreSQL is not running locally, the application can still start cleanly an
 From the `backend/` directory:
 
 ### Run Tests
+
 ```bash
 mvn clean test
 ```
 
 ### Compile and Package JAR
+
 ```bash
 mvn clean package
 ```
 
 ### Run Spring Boot Application
+
 ```bash
 mvn spring-boot:run
 ```
+
 Or run the packaged JAR directly:
+
 ```bash
 java -jar target/agrismart-backend-0.0.1-SNAPSHOT.jar
 ```
@@ -100,10 +156,13 @@ java -jar target/agrismart-backend-0.0.1-SNAPSHOT.jar
 ## 7. Health & Verification Endpoints
 
 ### 1. General Service Health
+
 ```http
 GET /api/health
 ```
+
 **Response (200 OK):**
+
 ```json
 {
   "status": "ok",
@@ -112,9 +171,11 @@ GET /api/health
 ```
 
 ### 2. Database Connectivity Health
+
 ```http
 GET /api/health/db
 ```
+
 - **When PostgreSQL is connected (200 OK):**
   ```json
   {
@@ -156,19 +217,27 @@ All errors returned by the backend adhere to the standardized schema:
 
 ---
 
-## 9. Current Limitations (Phase 4B-1 Scope)
+## 9. Current Status & Limitations (Phase 4B-2C Complete)
 
-- **Authentication / Security:** Spring Security and JWT are not yet configured (planned for subsequent phase).
-- **Domain Entities:** JPA entities (`User`, `Farm`, `Provider`, `Appointment`, `SoilReport`, `Recommendation`) are not yet introduced to ensure isolation during foundation setup.
-- **ML Integration:** `CropMLClientService` is not yet implemented in this phase.
+- **Completed in Phase 4B-2A, 4B-2B, & 4B-2C:**
+  - JPA entities and repositories for `User`, `Farm`, `SoilTestingProvider`, `Appointment`, and `SoilReport`.
+  - Flyway migration `V1__initial_schema.sql` defining PostgreSQL tables, foreign keys, and indexes.
+  - Strict domain rule: soil chemical values (N, P, K, pH, EC, OC) remain null unless genuinely reported; zero values are never substituted.
+  - Zero fabricated seed records.
+  - REST controllers, services, and Java 17 record DTOs for `SoilTestingProvider`, `Appointment`, and `SoilReport`.
+  - Write-once immutability for soil reports (no arbitrary measurement updates, no DELETE endpoints).
+  - Controlled lifecycle state machine for appointments with terminal status protection and 409 conflict responses.
+  - Atomic synchronization: creating a soil report for an appointment in `TESTING` status automatically advances it to `REPORT_READY`.
+  - Explicit verification workflow via `PATCH /api/soil-reports/{id}/verify` (new reports default strictly to `verified = false`).
+  - Diagnostic `SoilMeasurementAvailability` payload distinguishing present vs missing measurements and isolating `isMlFeatureReady`.
+- **Pending Future Phases:**
+  - **Authentication / Security:** Spring Security and JWT are not yet configured (planned for subsequent phase).
+  - **ML Integration:** `CropMLClientService` calling FastAPI `POST /predict` is planned for Phase 4B-3.
 
 ---
 
-## 10. Future Integration Plan (Phase 4B-2 & 4B-3)
+## 10. Future Integration Plan (Phase 4B-3)
 
-1. **Phase 4B-2 (Domain Entities & Persistence):**
-   - Implement JPA entities and repositories for users, farms, soil testing providers, appointments, and soil reports.
-   - Introduce Flyway database migrations for production-ready schema evolution.
-2. **Phase 4B-3 (ML Client & Business Logic):**
-   - Implement `CropMLClientService` using Spring's `RestClient` / `WebClient` to invoke FastAPI `POST /predict`.
-   - Implement the recommendation pipeline connecting soil reports to crop predictions.
+1. **Phase 4B-3 (ML Recommendation Pipeline):**
+   - Implement `CropMLClientService` using Spring's `RestClient` to invoke FastAPI `POST /predict`.
+   - Implement the recommendation pipeline combining verified soil reports (N, P, K, pH) with real-time weather features to query crop predictions.

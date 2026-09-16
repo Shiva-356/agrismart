@@ -1,15 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import {
-  BadgeCheck,
-  List,
-  Map as MapIcon,
-  MapPin,
-  Phone,
-  Search,
-  TestTubes,
-} from "lucide-react";
+import { BadgeCheck, List, Map as MapIcon, MapPin, Phone, Search, TestTubes } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -129,12 +121,10 @@ function SoilTestingPage() {
             : {})}
           actions={
             <div className="flex rounded-xl border border-border bg-card p-1">
-              {(
-                [
-                  { key: "list" as const, label: "List", icon: List },
-                  { key: "map" as const, label: "Map", icon: MapIcon },
-                ]
-              ).map(({ key, label, icon: Icon }) => (
+              {[
+                { key: "list" as const, label: "List", icon: List },
+                { key: "map" as const, label: "Map", icon: MapIcon },
+              ].map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
                   type="button"

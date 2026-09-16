@@ -19,6 +19,9 @@ spring:
         boot:
           allow_jdbc_metadata_access: false
 
+  flyway:
+    enabled: false
+
 agrismart:
   cors:
     allowed-origins: http://localhost:3000,http://localhost:5173

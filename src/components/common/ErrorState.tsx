@@ -26,7 +26,8 @@ export function ErrorState({
       </span>
       <h3 className="mt-4 text-base font-semibold tracking-tight text-foreground">{title}</h3>
       <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-muted-foreground">
-        {description ?? "The data source did not respond. No values are shown rather than estimates."}
+        {description ??
+          "The data source did not respond. No values are shown rather than estimates."}
       </p>
       {onRetry ? (
         <Button variant="outline" size="sm" className="mt-5" onClick={onRetry}>

@@ -189,11 +189,7 @@ function RecommendationsPage() {
       {farmQ.isPending || soilQ.isPending ? (
         <LoadingSkeleton variant="card" count={2} />
       ) : (
-        <DataAvailability
-          farm={farmQ.data?.data}
-          weather={weatherQ.data?.data}
-          soil={soil}
-        />
+        <DataAvailability farm={farmQ.data?.data} weather={weatherQ.data?.data} soil={soil} />
       )}
 
       {recQ.isPending ? (
@@ -326,7 +322,10 @@ function RecommendationsPage() {
             )}
           </section>
 
-          <section className="rounded-2xl border border-primary/25 bg-primary/5 p-5" aria-label="Next step">
+          <section
+            className="rounded-2xl border border-primary/25 bg-primary/5 p-5"
+            aria-label="Next step"
+          >
             <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Recommended next step
             </h2>
@@ -367,7 +366,9 @@ function RecommendationsPage() {
                   { label: "Rainfall", value: weatherQ.data.data.rainfallMm, unit: "mm" },
                 ].map((w) => (
                   <div key={w.label} className="rounded-xl border border-border/70 px-3 py-2">
-                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">{w.label}</dt>
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {w.label}
+                    </dt>
                     <dd className="mt-1 text-sm font-semibold">
                       <MetricValue value={w.value} unit={w.unit} />
                     </dd>

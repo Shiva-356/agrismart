@@ -55,7 +55,9 @@ export function NotificationPanel({
                   <p
                     className={cn(
                       "min-w-0 truncate text-sm",
-                      n.read ? "font-medium text-muted-foreground" : "font-semibold text-foreground",
+                      n.read
+                        ? "font-medium text-muted-foreground"
+                        : "font-semibold text-foreground",
                     )}
                   >
                     {!n.read ? (

@@ -57,10 +57,7 @@ function CultivationIndexPage() {
       {farmQ.isPending || recQ.isPending ? (
         <LoadingSkeleton variant="card" count={2} />
       ) : recQ.isError ? (
-        <ErrorState
-          title="Unable to load cultivation guides"
-          onRetry={() => void recQ.refetch()}
-        />
+        <ErrorState title="Unable to load cultivation guides" onRetry={() => void recQ.refetch()} />
       ) : crops.length === 0 ? (
         <EmptyState
           icon={Sprout}
@@ -94,13 +91,17 @@ function CultivationIndexPage() {
               ) : null}
               <dl className="mt-4 grid grid-cols-2 gap-2">
                 <div className="rounded-xl border border-border/70 px-3 py-2">
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">Duration</dt>
+                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Duration
+                  </dt>
                   <dd className="mt-1 text-sm font-semibold">
                     <MetricValue value={c.growthDurationDays} unit="days" />
                   </dd>
                 </div>
                 <div className="rounded-xl border border-border/70 px-3 py-2">
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">Water need</dt>
+                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Water need
+                  </dt>
                   <dd className="mt-1 text-sm font-semibold">
                     <MetricValue value={c.waterRequirement} />
                   </dd>

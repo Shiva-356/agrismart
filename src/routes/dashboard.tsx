@@ -38,12 +38,7 @@ import { SoilStatusCard } from "@/components/agri/SoilStatusCard";
 import { RecommendationCard } from "@/components/agri/RecommendationCard";
 import { ExplanationPanel } from "@/components/agri/ExplanationPanel";
 import { MetricValue } from "@/components/agri/value";
-import {
-  farmsService,
-  recommendationsService,
-  soilService,
-  weatherService,
-} from "@/services";
+import { farmsService, recommendationsService, soilService, weatherService } from "@/services";
 import {
   SOIL_TYPES,
   generateRecommendations,
@@ -93,7 +88,10 @@ function greeting() {
 }
 
 function Dashboard() {
-  const farmQ = useQuery({ queryKey: ["farm", "active"], queryFn: () => farmsService.getActiveFarm() });
+  const farmQ = useQuery({
+    queryKey: ["farm", "active"],
+    queryFn: () => farmsService.getActiveFarm(),
+  });
   const farmId = farmQ.data?.data.id;
 
   const weatherQ = useQuery({
@@ -233,7 +231,10 @@ function Dashboard() {
                   "Use the report for better recommendations",
                 ].map((point) => (
                   <li key={point} className="flex items-start gap-2 text-sm text-foreground">
-                    <CheckCircle2 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />
+                    <CheckCircle2
+                      aria-hidden="true"
+                      className="mt-0.5 size-4 shrink-0 text-primary"
+                    />
                     <span className="min-w-0">{point}</span>
                   </li>
                 ))}
@@ -645,9 +646,21 @@ function PlanningPanel() {
                   </div>
                   <p className="mt-3 text-sm text-muted-foreground">{r.rationale}</p>
                   <dl className="mt-4 grid gap-3 sm:grid-cols-3">
-                    <Stat icon={<Sprout className="size-4" />} label="Expected yield" value={r.expectedYield} />
-                    <Stat icon={<Droplets className="size-4" />} label="Water need" value={r.waterNeed} />
-                    <Stat icon={<Coins className="size-4" />} label="Est. profit" value={r.estimatedProfit} />
+                    <Stat
+                      icon={<Sprout className="size-4" />}
+                      label="Expected yield"
+                      value={r.expectedYield}
+                    />
+                    <Stat
+                      icon={<Droplets className="size-4" />}
+                      label="Water need"
+                      value={r.waterNeed}
+                    />
+                    <Stat
+                      icon={<Coins className="size-4" />}
+                      label="Est. profit"
+                      value={r.estimatedProfit}
+                    />
                   </dl>
                 </article>
               ))}

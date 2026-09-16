@@ -32,17 +32,17 @@ export const Route = createFileRoute("/api/predict")({
             body: JSON.stringify(parsed),
           });
           if (!res.ok) {
-            return Response.json(
-              { error: `ML service responded ${res.status}` },
-              { status: 502 },
-            );
+            return Response.json({ error: `ML service responded ${res.status}` }, { status: 502 });
           }
           return Response.json({ ...(await res.json()), runtime: "fastapi" });
         }
 
         if (!localModelAvailable) {
           return Response.json(
-            { error: "No trained model available. Run python ml/train.py or set AGRISMART_ML_API_URL." },
+            {
+              error:
+                "No trained model available. Run python ml/train.py or set AGRISMART_ML_API_URL.",
+            },
             { status: 503 },
           );
         }

@@ -50,15 +50,17 @@ export function StatusBadge({
   );
 }
 
-const APPOINTMENT_MAP: Record<AppointmentStatus, { label: string; tone: StatusTone; icon: LucideIcon }> =
-  {
-    booked: { label: "Booked", tone: "neutral", icon: Clock },
-    confirmed: { label: "Confirmed", tone: "info", icon: CheckCircle2 },
-    sample_collected: { label: "Sample collected", tone: "info", icon: FlaskConical },
-    testing: { label: "Testing in lab", tone: "warning", icon: CircleDashed },
-    report_ready: { label: "Report ready", tone: "success", icon: ShieldCheck },
-    completed: { label: "Completed", tone: "success", icon: CheckCircle2 },
-  };
+const APPOINTMENT_MAP: Record<
+  AppointmentStatus,
+  { label: string; tone: StatusTone; icon: LucideIcon }
+> = {
+  booked: { label: "Booked", tone: "neutral", icon: Clock },
+  confirmed: { label: "Confirmed", tone: "info", icon: CheckCircle2 },
+  sample_collected: { label: "Sample collected", tone: "info", icon: FlaskConical },
+  testing: { label: "Testing in lab", tone: "warning", icon: CircleDashed },
+  report_ready: { label: "Report ready", tone: "success", icon: ShieldCheck },
+  completed: { label: "Completed", tone: "success", icon: CheckCircle2 },
+};
 
 export function AppointmentStatusBadge({
   status,
@@ -71,7 +73,10 @@ export function AppointmentStatusBadge({
   return <StatusBadge label={m.label} tone={m.tone} icon={m.icon} className={className} />;
 }
 
-const PARAMETER_MAP: Record<ParameterStatus, { label: string; tone: StatusTone; icon: LucideIcon }> = {
+const PARAMETER_MAP: Record<
+  ParameterStatus,
+  { label: string; tone: StatusTone; icon: LucideIcon }
+> = {
   available: { label: "Tested", tone: "success", icon: CheckCircle2 },
   not_tested: { label: "Not tested", tone: "muted", icon: MinusCircle },
   not_available: { label: "Not available", tone: "muted", icon: CircleHelp },
@@ -112,7 +117,14 @@ export function ReliabilityBadge({
   className?: string | undefined;
 }) {
   if (!reliability) {
-    return <StatusBadge label="Reliability unavailable" tone="muted" icon={CircleHelp} className={className} />;
+    return (
+      <StatusBadge
+        label="Reliability unavailable"
+        tone="muted"
+        icon={CircleHelp}
+        className={className}
+      />
+    );
   }
   const tone: StatusTone =
     reliability === "High" ? "success" : reliability === "Moderate" ? "warning" : "danger";

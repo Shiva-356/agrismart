@@ -70,7 +70,10 @@ function CultivationCropPage() {
         />
       )}
 
-      <section className="rounded-2xl border border-primary/25 bg-primary/5 p-5" aria-label="Next step">
+      <section
+        className="rounded-2xl border border-primary/25 bg-primary/5 p-5"
+        aria-label="Next step"
+      >
         <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           Keep going
         </h2>

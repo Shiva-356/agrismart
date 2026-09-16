@@ -96,7 +96,10 @@ function ComparePage() {
               <caption className="sr-only">Comparison of suggested crops</caption>
               <thead>
                 <tr className="border-b border-border">
-                  <th scope="col" className="p-4 text-left text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  <th
+                    scope="col"
+                    className="p-4 text-left text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                  >
                     Detail
                   </th>
                   {crops.map((c, i) => (
@@ -109,9 +112,16 @@ function ComparePage() {
                           : "p-4 text-left align-bottom"
                       }
                     >
-                      <span className="block text-base font-semibold text-foreground">{c.crop}</span>
+                      <span className="block text-base font-semibold text-foreground">
+                        {c.crop}
+                      </span>
                       {i === 0 ? (
-                        <StatusBadge label="Recommended" tone="success" icon={Star} className="mt-2" />
+                        <StatusBadge
+                          label="Recommended"
+                          tone="success"
+                          icon={Star}
+                          className="mt-2"
+                        />
                       ) : null}
                     </th>
                   ))}
@@ -159,7 +169,9 @@ function ComparePage() {
                 }
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-base font-semibold tracking-tight text-foreground">{c.crop}</h2>
+                  <h2 className="text-base font-semibold tracking-tight text-foreground">
+                    {c.crop}
+                  </h2>
                   {i === 0 ? <StatusBadge label="Recommended" tone="success" icon={Star} /> : null}
                 </div>
                 <dl className="mt-3 space-y-2">
@@ -175,7 +187,12 @@ function ComparePage() {
                     );
                   })}
                 </dl>
-                <Button asChild size="sm" className="mt-4" variant={i === 0 ? "default" : "outline"}>
+                <Button
+                  asChild
+                  size="sm"
+                  className="mt-4"
+                  variant={i === 0 ? "default" : "outline"}
+                >
                   <Link to="/cultivation/$crop" params={{ crop: c.crop }}>
                     How to cultivate
                   </Link>
