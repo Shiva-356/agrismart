@@ -166,43 +166,32 @@ public class AppointmentService {
      * CANCELLED -> (terminal)
      */
     private void validateTransition(AppointmentStatus current, AppointmentStatus target) {
-    if (current == AppointmentStatus.COMPLETED || current == AppointmentStatus.CANCELLED) {
-        throw new InvalidStatusTransitionException(
-                "Cannot modify appointment in terminal status: " + current
-        );
-    }
-
-    if (current == target) {
-        throw new InvalidStatusTransitionException(
-                "Appointment is already in status " + current
-        );
-    }
-
-    boolean allowed = switch (current) {
-        case BOOKED ->
-                (target == AppointmentStatus.CONFIRMED || target == AppointmentStatus.CANCELLED);
-        case CONFIRMED ->
-                (target == AppointmentStatus.SAMPLE_COLLECTED || target == AppointmentStatus.CANCELLED);
-        case SAMPLE_COLLECTED ->
-                (target == AppointmentStatus.TESTING || target == AppointmentStatus.CANCELLED);
-        case TESTING ->
-                (target == AppointmentStatus.REPORT_READY);
-        case REPORT_READY ->
-                (target == AppointmentStatus.COMPLETED);
-        default -> false;
-    };
-
-    if (!allowed) {
-        if (current == AppointmentStatus.TESTING && target == AppointmentStatus.CANCELLED) {
-            throw new InvalidStatusTransitionException(
-                    "Cannot cancel appointment in TESTING stage. Laboratory analysis is already in progress."
-            );
+        if (current == AppointmentStatus.COMPLETED || current == AppointmentStatus.CANCELLED) {
+            throw new InvalidStatusTransitionException("Cannot modify appointment in terminal status: " + current);
+        }
+        if (current == target) {
+            throw new InvalidStatusTransitionException("Appointment is already in status " + current);
         }
 
-        throw new InvalidStatusTransitionException(
-                "Invalid status transition from " + current + " to " + target +
-                        ". Skipping intermediate stages or moving backward is not permitted."
-        );
+        boolean allowed = switch (current) {
+            case BOOKED -> (target == AppointmentStatus.CONFIRMED || target == AppointmentStatus.CANCELLED);
+            case CONFIRMED -> (target == AppointmentStatus.SAMPLE_COLLECTED || target == AppointmentStatus.CANCELLED);
+            case SAMPLE_COLLECTED -> (target == AppointmentStatus.TESTING || target == AppointmentStatus.CANCELLED);
+            case TESTING -> (target == AppointmentStatus.REPORT_READY);
+            case REPORT_READY -> (target == AppointmentStatus.COMPLETED);
+            default -> false;
+        };
+
+        if (!allowed) {
+            if (current == AppointmentStatus.TESTING && target == AppointmentStatus.CANCELLED) {
+                throw new InvalidStatusTransitionException(
+                        "Cannot cancel appointment in TESTING stage. Laboratory analysis is already in progress."
+                );
+            }
+            throw new InvalidStatusTransitionException(
+                    "Invalid status transition from " + current + " to " + target +
+                            ". Skipping intermediate stages or moving backward is not permitted."
+            );
+        }
     }
-}
 }

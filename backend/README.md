@@ -35,6 +35,8 @@ com.agrismart
 │   └── CorsConfig.java             # Explicit CORS policy configuration
 ├── controller/
 │   ├── HealthController.java       # Service & database health endpoints
+│   ├── UserController.java         # REST API for user registration and queries
+│   ├── FarmController.java         # REST API for farm plots and ownership filtering
 │   ├── ProviderController.java     # REST API for soil testing providers
 │   ├── AppointmentController.java  # REST API for booking & appointment lifecycle
 │   └── SoilReportController.java   # REST API for authentic soil report ingestion & queries
@@ -42,6 +44,13 @@ com.agrismart
 │   ├── HealthResponse.java         # DTO for service health
 │   ├── DatabaseHealthResponse.java # DTO for database connectivity health
 │   ├── ValidationExampleRequest.java # Example DTO demonstrating validation conventions
+│   ├── user/
+│   │   ├── CreateUserRequest.java
+│   │   └── UserResponse.java
+│   ├── farm/
+│   │   ├── CreateFarmRequest.java
+│   │   ├── UpdateFarmRequest.java
+│   │   └── FarmResponse.java
 │   ├── provider/
 │   │   ├── CreateProviderRequest.java
 │   │   ├── UpdateProviderRequest.java
@@ -80,6 +89,8 @@ com.agrismart
 │   ├── AppointmentRepository.java  # Appointment repository with JpaSpecificationExecutor
 │   └── SoilReportRepository.java   # Soil report repository with ordered queries
 └── service/
+    ├── UserService.java            # User creation, lookup, and email uniqueness checks
+    ├── FarmService.java            # Farm registration, land validation, and ownership filtering
     ├── ProviderService.java        # Provider domain business logic & filtering
     ├── AppointmentService.java     # Appointment lifecycle state machine & bookings
     └── SoilReportService.java      # Soil report write-once persistence & verification
@@ -217,21 +228,28 @@ All errors returned by the backend adhere to the standardized schema:
 
 ---
 
-## 9. Current Status & Limitations (Phase 4B-2C Complete)
+## 9. Current Status & Limitations (Phase 4B-2D Complete)
 
-- **Completed in Phase 4B-2A, 4B-2B, & 4B-2C:**
+- **Completed in Phase 4B-2A through 4B-2D:**
   - JPA entities and repositories for `User`, `Farm`, `SoilTestingProvider`, `Appointment`, and `SoilReport`.
   - Flyway migration `V1__initial_schema.sql` defining PostgreSQL tables, foreign keys, and indexes.
   - Strict domain rule: soil chemical values (N, P, K, pH, EC, OC) remain null unless genuinely reported; zero values are never substituted.
   - Zero fabricated seed records.
-  - REST controllers, services, and Java 17 record DTOs for `SoilTestingProvider`, `Appointment`, and `SoilReport`.
+  - REST controllers, services, and Java 17 record DTOs for `User`, `Farm`, `SoilTestingProvider`, `Appointment`, and `SoilReport`.
+  - **User API:** `POST /api/users` (with uniqueness check on email, 409 Conflict), `GET /api/users/{id}`, and `GET /api/users?email={email}`.
+  - **Farm API:**
+    - `POST /api/farms`: registers a farm parcel for a verified user (`userId` required, positive `landAreaAcres`, required `irrigation`).
+    - `GET /api/farms`: lists all registered farms.
+    - `GET /api/farms?userId={userId}`: filters farms by existing user ID (returns 404 if user does not exist).
+    - `GET /api/farms/{id}`: retrieves a single farm by ID (returns 404 if absent).
+    - `PUT /api/farms/{id}`: updates editable farm attributes while preventing changing the farm's owner.
   - Write-once immutability for soil reports (no arbitrary measurement updates, no DELETE endpoints).
   - Controlled lifecycle state machine for appointments with terminal status protection and 409 conflict responses.
   - Atomic synchronization: creating a soil report for an appointment in `TESTING` status automatically advances it to `REPORT_READY`.
   - Explicit verification workflow via `PATCH /api/soil-reports/{id}/verify` (new reports default strictly to `verified = false`).
   - Diagnostic `SoilMeasurementAvailability` payload distinguishing present vs missing measurements and isolating `isMlFeatureReady`.
 - **Pending Future Phases:**
-  - **Authentication / Security:** Spring Security and JWT are not yet configured (planned for subsequent phase).
+  - **Authentication / RBAC:** Real authentication, JWT tokens, and user identity session extraction from security context (ownership currently supplied via `userId` for development).
   - **ML Integration:** `CropMLClientService` calling FastAPI `POST /predict` is planned for Phase 4B-3.
 
 ---

@@ -98,6 +98,39 @@ class RepositoryMappingTest {
     }
 
     @Test
+    @DisplayName("Farm lifecycle: supports update, query by user, and all farms listing")
+    void testFarmLifecycleAndUserFiltering() {
+        User user1 = userRepository.save(new User("Suresh Reddy", "suresh@example.com", "+919123456780"));
+        User user2 = userRepository.save(new User("Anil Rao", "anil@example.com", "+919123456781"));
+
+        Farm farm1 = new Farm(user1, "Reddy Farms 1", "North Fields", "Nalgonda", new BigDecimal("4.25"), "Drip");
+        Farm farm2 = new Farm(user1, "Reddy Farms 2", "South Fields", "Nalgonda", new BigDecimal("2.50"), "Canal");
+        Farm farm3 = new Farm(user2, "Rao Orchards", "Hill View", "Medak", new BigDecimal("7.00"), "Sprinkler");
+
+        farmRepository.saveAll(List.of(farm1, farm2, farm3));
+
+        // Test find by user ID
+        List<Farm> user1Farms = farmRepository.findByUserId(user1.getId());
+        assertThat(user1Farms).hasSize(2);
+
+        List<Farm> user2Farms = farmRepository.findByUserId(user2.getId());
+        assertThat(user2Farms).hasSize(1);
+        assertThat(user2Farms.get(0).getName()).isEqualTo("Rao Orchards");
+
+        // Test update
+        Farm toUpdate = user1Farms.get(0);
+        toUpdate.setName("Reddy Farms - Renovated");
+        toUpdate.setCurrentCrop("Chilli");
+        Farm updated = farmRepository.save(toUpdate);
+        assertThat(updated.getName()).isEqualTo("Reddy Farms - Renovated");
+        assertThat(updated.getCurrentCrop()).isEqualTo("Chilli");
+
+        // Test find all
+        List<Farm> allFarms = farmRepository.findAll();
+        assertThat(allFarms).hasSizeGreaterThanOrEqualTo(3);
+    }
+
+    @Test
     @DisplayName("SoilTestingProvider mapping: verifies provider attributes without fabricated seed data")
     void testProviderMapping() {
         SoilTestingProvider provider = new SoilTestingProvider(
