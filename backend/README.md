@@ -81,19 +81,35 @@ com.agrismart
 │   ├── GlobalExceptionHandler.java # @RestControllerAdvice for consistent JSON errors
 │   ├── ResourceNotFoundException.java # HTTP 404 handler
 │   ├── InvalidStatusTransitionException.java # HTTP 409 handler
-│   └── BusinessRuleViolationException.java # HTTP 422 handler
+│   ├── BusinessRuleViolationException.java # HTTP 422 handler
+│   ├── RecommendationPrerequisiteException.java # HTTP 422 handler for soil/weather prerequisite violations
+│   └── MlServiceException.java     # HTTP 502/503 handler for ML service communication failures
+├── ml/
+│   ├── client/
+│   │   ├── MlPredictionClient.java # Interface for ML crop prediction
+│   │   ├── FastApiMlClient.java    # Spring RestClient implementation calling FastAPI POST /predict
+│   │   ├── MlClientConfig.java     # Bean configuration with configurable timeouts and base URL
+│   │   ├── FastApiPredictRequest.java  # Exact FastAPI schema mapping {N, P, K, temperature, humidity, ph, rainfall}
+│   │   ├── FastApiPredictResponse.java # FastAPI response schema mapping {crop, ranked, model, featuresUsed, classCount, note}
+│   │   └── FastApiRankedCrop.java  # Ranked crop candidate {crop, probability}
+│   └── dto/
+│       ├── MlPredictionRequest.java    # Internal domain 7-feature request
+│       └── MlPredictionResponse.java   # Internal domain prediction response
+├── weather/
+│   └── WeatherObservation.java     # Weather boundary abstraction for Phase 4C-2 real weather input
 ├── repository/
 │   ├── UserRepository.java         # Spring Data JPA User repository
 │   ├── FarmRepository.java         # Spring Data JPA Farm repository
 │   ├── SoilTestingProviderRepository.java # Provider repository with JpaSpecificationExecutor
 │   ├── AppointmentRepository.java  # Appointment repository with JpaSpecificationExecutor
-│   └── SoilReportRepository.java   # Soil report repository with ordered queries
+│   └── SoilReportRepository.java   # Soil report repository with ordered queries and verified top query
 └── service/
     ├── UserService.java            # User creation, lookup, and email uniqueness checks
     ├── FarmService.java            # Farm registration, land validation, and ownership filtering
     ├── ProviderService.java        # Provider domain business logic & filtering
     ├── AppointmentService.java     # Appointment lifecycle state machine & bookings
-    └── SoilReportService.java      # Soil report write-once persistence & verification
+    ├── SoilReportService.java      # Soil report write-once persistence & verification
+    └── RecommendationService.java  # Verified soil report + weather ML orchestration engine
 ```
 
 Resources:
@@ -119,6 +135,9 @@ The application reads configuration from `src/main/resources/application.yml` wi
 | `JPA_DDL_AUTO`   | `validate`                                    | DDL schema mode (`validate` when Flyway manages migrations)           |
 | `FLYWAY_ENABLED` | `true`                                        | Enable or disable Flyway database migration runs                      |
 | `FRONTEND_URL`   | `http://localhost:3000,http://localhost:5173` | Allowed CORS origins for the frontend application                     |
+| `AGRISMART_ML_API_URL` | `http://localhost:8000`              | FastAPI ML inference service base URL                                 |
+| `AGRISMART_ML_CONNECT_TIMEOUT_SECONDS` | `3`                   | Connection timeout in seconds when calling FastAPI ML service          |
+| `AGRISMART_ML_READ_TIMEOUT_SECONDS` | `5`                      | Read timeout in seconds when calling FastAPI ML service                 |
 
 ---
 
@@ -228,14 +247,14 @@ All errors returned by the backend adhere to the standardized schema:
 
 ---
 
-## 9. Current Status & Limitations (Phase 4B-2D Complete)
+## 9. Current Status & Limitations (Phase 4C-2 Complete)
 
-- **Completed in Phase 4B-2A through 4B-2D:**
+- **Completed in Phase 4B-2A through Phase 4C-2:**
   - JPA entities and repositories for `User`, `Farm`, `SoilTestingProvider`, `Appointment`, and `SoilReport`.
   - Flyway migration `V1__initial_schema.sql` defining PostgreSQL tables, foreign keys, and indexes.
   - Strict domain rule: soil chemical values (N, P, K, pH, EC, OC) remain null unless genuinely reported; zero values are never substituted.
   - Zero fabricated seed records.
-  - REST controllers, services, and Java 17 record DTOs for `User`, `Farm`, `SoilTestingProvider`, `Appointment`, and `SoilReport`.
+  - REST controllers, services, and Java 17 record DTOs for `User`, `Farm`, `SoilTestingProvider`, `Appointment`, `SoilReport`, and `Recommendation`.
   - **User API:** `POST /api/users` (with uniqueness check on email, 409 Conflict), `GET /api/users/{id}`, and `GET /api/users?email={email}`.
   - **Farm API:**
     - `POST /api/farms`: registers a farm parcel for a verified user (`userId` required, positive `landAreaAcres`, required `irrigation`).
@@ -248,14 +267,43 @@ All errors returned by the backend adhere to the standardized schema:
   - Atomic synchronization: creating a soil report for an appointment in `TESTING` status automatically advances it to `REPORT_READY`.
   - Explicit verification workflow via `PATCH /api/soil-reports/{id}/verify` (new reports default strictly to `verified = false`).
   - Diagnostic `SoilMeasurementAvailability` payload distinguishing present vs missing measurements and isolating `isMlFeatureReady`.
+  - **Phase 4C-1 (Real Soil Report → FastAPI ML Integration):**
+    - `RecommendationService`: orchestrates retrieving the latest verified soil report for a farm, validates prerequisite presence of N/P/K/pH, accepts `WeatherObservation`, constructs the exact 7-feature vector, invokes `MlPredictionClient`, and maps the inference output to `RecommendationResponse`.
+    - `FastApiMlClient`: Spring `RestClient` client connecting to FastAPI `POST /predict`. Strictly uses exact FastAPI JSON schema (`N`, `P`, `K`, `temperature`, `humidity`, `ph`, `rainfall`).
+    - `WeatherObservation`: internal weather boundary abstraction (temperature, humidity, rainfall, observedAt, source). No placeholder or default weather values.
+    - Deterministic repository query: `findTopByFarmIdAndVerifiedTrueOrderByTestDateDescCreatedAtDesc(UUID farmId)` guaranteeing that only verified laboratory reports are selected.
+  - **Phase 4C-2 (Real Weather Integration):**
+    - **Weather Provider Abstraction (`WeatherProvider`):** interface decoupled from specific vendor HTTP calls, returning genuine `WeatherObservation` (temperature, humidity, rainfall, observedAt, source).
+    - **Concrete Provider (`OpenMeteoWeatherProvider`):** integrates with Open-Meteo's documented `/v1/forecast` endpoint. Strictly validates all measurements (`temperature_2m`, `relative_humidity_2m`, liquid `rain` / `precipitation`). Rejects NaN/Infinite/missing values. Never silently falls back to 0.0 mm rainfall.
+    - **Location Resolver Abstraction (`LocationResolver`):** resolves farm textual location and district to validated `ResolvedLocation` (latitude, longitude, displayName).
+    - **Concrete Resolver (`OpenMeteoLocationResolver`):** resolves location via Open-Meteo Geocoding API (`/v1/search`). Tries combined `${location}, ${district}` first, then `${district}`. If unresolvable, explicitly returns `WEATHER_LOCATION_UNRESOLVED` (never uses fabricated fallback coordinates).
+    - **Weather Service (`WeatherService`):** orchestrates location resolution and weather retrieval via dependency inversion.
+    - **High-level Recommendation Flow (`recommend(UUID farmId)`):** resolves location → fetches real-time weather → retrieves latest verified soil report → verifies all 7 features → calls FastAPI ML → returns `RecommendationResponse`.
+    - **Recommendation API:**
+      - `GET /api/farms/{farmId}/recommendation`: generates real-time recommendation using verified laboratory soil and live weather observations.
+      - `POST /api/farms/{farmId}/recommendation`: generates recommendation with optional explicit weather observation (for simulation/testing).
+    - **Explicit Prerequisite & Error Codes:**
+      - `WEATHER_LOCATION_UNRESOLVED` (422): Farm location could not be reliably resolved to coordinates.
+      - `WEATHER_DATA_UNAVAILABLE` (503): Weather service is unreachable or response lacks required measurements.
+      - `WEATHER_FEATURES_INCOMPLETE` (422): Temperature, humidity, or rainfall measurement is missing or non-finite.
+      - `NO_VERIFIED_SOIL_REPORT` (422): Farm does not have a laboratory-verified soil report.
+      - `SOIL_FEATURES_INCOMPLETE` (422): Verified soil report is missing one of N, P, K, or pH.
+      - `ML_SERVICE_UNAVAILABLE` (503): FastAPI ML microservice is unreachable or timed out.
+      - `ML_SERVICE_INVALID_RESPONSE` (502): FastAPI ML microservice returned an invalid response.
 - **Pending Future Phases:**
-  - **Authentication / RBAC:** Real authentication, JWT tokens, and user identity session extraction from security context (ownership currently supplied via `userId` for development).
-  - **ML Integration:** `CropMLClientService` calling FastAPI `POST /predict` is planned for Phase 4B-3.
+  - **Phase 4D:** Frontend weather and recommendation integration.
+  - **Authentication / RBAC:** Real authentication, JWT tokens, and user identity session extraction from security context.
 
 ---
 
-## 10. Future Integration Plan (Phase 4B-3)
+## 10. Weather Configuration & Environment Variables
 
-1. **Phase 4B-3 (ML Recommendation Pipeline):**
-   - Implement `CropMLClientService` using Spring's `RestClient` to invoke FastAPI `POST /predict`.
-   - Implement the recommendation pipeline combining verified soil reports (N, P, K, pH) with real-time weather features to query crop predictions.
+| Variable | Description | Default |
+|---|---|---|
+| `WEATHER_PROVIDER` | Weather provider implementation identifier | `open-meteo` |
+| `WEATHER_API_BASE_URL` | Base URL for weather observation API | `https://api.open-meteo.com` |
+| `WEATHER_GEOCODING_BASE_URL` | Base URL for location geocoding API | `https://geocoding-api.open-meteo.com` |
+| `WEATHER_API_KEY` | Optional API key for commercial weather services | *(empty)* |
+| `WEATHER_CONNECT_TIMEOUT_SECONDS` | HTTP connection timeout for weather requests | `3` |
+| `WEATHER_READ_TIMEOUT_SECONDS` | HTTP read timeout for weather requests | `5` |
+

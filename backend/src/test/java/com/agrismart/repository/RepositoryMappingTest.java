@@ -224,4 +224,53 @@ class RepositoryMappingTest {
         assertThat(latest).isPresent();
         assertThat(latest.get().getLaboratoryName()).isEqualTo("State Soil Testing Laboratory");
     }
+
+    @Test
+    @DisplayName("SoilReport query: findTopByFarmIdAndVerifiedTrue deterministically selects latest verified report")
+    void testFindTopByFarmIdAndVerifiedTrue() {
+        User user = userRepository.save(new User("Gopal Rao", "gopal@example.com", "+919876543299"));
+        Farm farm1 = farmRepository.save(new Farm(
+                user, "Gopal Field North", "Karimnagar", "Karimnagar",
+                new BigDecimal("3.50"), "Drip"
+        ));
+        Farm farm2 = farmRepository.save(new Farm(
+                user, "Gopal Field South", "Karimnagar", "Karimnagar",
+                new BigDecimal("2.00"), "Canal"
+        ));
+
+        // Farm 1: has an older verified report and a newer unverified report
+        SoilReport olderVerified = new SoilReport(farm1, "District Lab", LocalDate.of(2026, 1, 10));
+        olderVerified.setVerified(true);
+        olderVerified.setNitrogen(new BigDecimal("80.00"));
+        olderVerified.setPhosphorus(new BigDecimal("40.00"));
+        olderVerified.setPotassium(new BigDecimal("45.00"));
+        olderVerified.setPh(new BigDecimal("6.50"));
+        soilReportRepository.save(olderVerified);
+
+        SoilReport newerUnverified = new SoilReport(farm1, "Private Lab", LocalDate.of(2026, 3, 20));
+        newerUnverified.setVerified(false);
+        newerUnverified.setNitrogen(new BigDecimal("120.00"));
+        soilReportRepository.save(newerUnverified);
+
+        // Farm 2: only has unverified reports
+        SoilReport onlyUnverified = new SoilReport(farm2, "Uncertified Lab", LocalDate.of(2026, 3, 15));
+        onlyUnverified.setVerified(false);
+        soilReportRepository.save(onlyUnverified);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Farm 1 query should deterministically return the older verified report
+        Optional<SoilReport> result1 = soilReportRepository
+                .findTopByFarmIdAndVerifiedTrueOrderByTestDateDescCreatedAtDesc(farm1.getId());
+        assertThat(result1).isPresent();
+        assertThat(result1.get().isVerified()).isTrue();
+        assertThat(result1.get().getLaboratoryName()).isEqualTo("District Lab");
+        assertThat(result1.get().getTestDate()).isEqualTo(LocalDate.of(2026, 1, 10));
+
+        // Farm 2 query should return empty because no verified report exists
+        Optional<SoilReport> result2 = soilReportRepository
+                .findTopByFarmIdAndVerifiedTrueOrderByTestDateDescCreatedAtDesc(farm2.getId());
+        assertThat(result2).isEmpty();
+    }
 }

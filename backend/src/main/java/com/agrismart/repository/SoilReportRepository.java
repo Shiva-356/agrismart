@@ -21,5 +21,7 @@ public interface SoilReportRepository extends JpaRepository<SoilReport, UUID> {
 
     Optional<SoilReport> findTopByFarmIdOrderByTestDateDescCreatedAtDesc(UUID farmId);
 
+    Optional<SoilReport> findTopByFarmIdAndVerifiedTrueOrderByTestDateDescCreatedAtDesc(UUID farmId);
+
     Optional<SoilReport> findByAppointmentId(UUID appointmentId);
 }

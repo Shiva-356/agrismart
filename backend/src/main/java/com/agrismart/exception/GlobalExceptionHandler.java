@@ -82,6 +82,59 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(body);
     }
 
+    @ExceptionHandler(RecommendationPrerequisiteException.class)
+    public ResponseEntity<ApiErrorResponse> handleRecommendationPrerequisite(
+            RecommendationPrerequisiteException ex,
+            HttpServletRequest request
+    ) {
+        ApiErrorResponse body = ApiErrorResponse.of(
+                HttpStatus.UNPROCESSABLE_ENTITY.value(),
+                ex.getErrorCode(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(body);
+    }
+
+    @ExceptionHandler(MlServiceException.class)
+    public ResponseEntity<ApiErrorResponse> handleMlServiceException(
+            MlServiceException ex,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = "ML_SERVICE_UNAVAILABLE".equals(ex.getErrorCode())
+                ? HttpStatus.SERVICE_UNAVAILABLE
+                : HttpStatus.BAD_GATEWAY;
+
+        ApiErrorResponse body = ApiErrorResponse.of(
+                status.value(),
+                ex.getErrorCode(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(status).body(body);
+    }
+
+    @ExceptionHandler(WeatherServiceException.class)
+    public ResponseEntity<ApiErrorResponse> handleWeatherServiceException(
+            WeatherServiceException ex,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = "WEATHER_DATA_UNAVAILABLE".equals(ex.getErrorCode())
+                || "WEATHER_SERVICE_UNAVAILABLE".equals(ex.getErrorCode())
+                ? HttpStatus.SERVICE_UNAVAILABLE
+                : ("WEATHER_LOCATION_UNRESOLVED".equals(ex.getErrorCode())
+                ? HttpStatus.UNPROCESSABLE_ENTITY
+                : HttpStatus.BAD_GATEWAY);
+
+        ApiErrorResponse body = ApiErrorResponse.of(
+                status.value(),
+                ex.getErrorCode(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(status).body(body);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidationException(
             MethodArgumentNotValidException ex,
