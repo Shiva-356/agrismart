@@ -1,5 +1,4 @@
 package com.agrismart.weather.location;
-
 import com.agrismart.entity.Farm;
 import com.agrismart.entity.User;
 import com.agrismart.exception.RecommendationPrerequisiteException;
@@ -41,10 +40,10 @@ class OpenMeteoLocationResolverTest {
         farm = new Farm();
         farm.setId(UUID.randomUUID());
         farm.setUser(farmer);
-        farm.setFarmName("Green Valley");
+        farm.setName("Green Valley");
         farm.setLocation("Warangal Rural");
         farm.setDistrict("Warangal");
-        farm.setSizeInAcres(BigDecimal.valueOf(5.0));
+        farm.setLandAreaAcres(BigDecimal.valueOf(5.0));
     }
 
     @Test

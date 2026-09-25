@@ -102,7 +102,7 @@ class RecommendationControllerTest {
 
         mockMvc.perform(get("/api/farms/{farmId}/recommendation", farmId))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.errorCode", is("RESOURCE_NOT_FOUND")));
+                .andExpect(jsonPath("$.error", is("RESOURCE_NOT_FOUND")));
     }
 
     @Test
@@ -113,7 +113,7 @@ class RecommendationControllerTest {
 
         mockMvc.perform(get("/api/farms/{farmId}/recommendation", farmId))
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.errorCode", is("WEATHER_LOCATION_UNRESOLVED")));
+                .andExpect(jsonPath("$.error", is("WEATHER_LOCATION_UNRESOLVED")));
     }
 
     @Test
@@ -124,7 +124,7 @@ class RecommendationControllerTest {
 
         mockMvc.perform(get("/api/farms/{farmId}/recommendation", farmId))
                 .andExpect(status().isServiceUnavailable())
-                .andExpect(jsonPath("$.errorCode", is("WEATHER_DATA_UNAVAILABLE")));
+                .andExpect(jsonPath("$.error", is("WEATHER_DATA_UNAVAILABLE")));
     }
 
     @Test
@@ -135,7 +135,7 @@ class RecommendationControllerTest {
 
         mockMvc.perform(get("/api/farms/{farmId}/recommendation", farmId))
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.errorCode", is("NO_VERIFIED_SOIL_REPORT")));
+                .andExpect(jsonPath("$.error", is("NO_VERIFIED_SOIL_REPORT")));
     }
 
     @Test
