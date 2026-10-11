@@ -49,7 +49,17 @@ export const Route = createFileRoute("/cultivation/")({
   component: CultivationIndexPage,
 });
 
-const CATEGORIES = ["All", "Cereal", "Pulse", "Fruit", "Fibre & Commercial", "Plantation"] as const;
+const CATEGORIES = ["All", "Cereal", "Pulse", "Fruit", "Commercial"] as const;
+
+function normalizeCategory(cat: string): string {
+  const c = cat.toLowerCase();
+  if (c.includes("cereal")) return "Cereal";
+  if (c.includes("pulse") || c.includes("legume")) return "Pulse";
+  if (c.includes("fruit") || c.includes("melon")) return "Fruit";
+  if (c.includes("commercial") || c.includes("cash") || c.includes("fibre") || c.includes("plantation"))
+    return "Commercial";
+  return cat;
+}
 
 function CultivationIndexPage() {
   const [search, setSearch] = useState("");
@@ -87,14 +97,18 @@ function CultivationIndexPage() {
 
   const filteredGuides = useMemo(() => {
     return allGuides.filter((guide: CropCultivationGuide) => {
-      const matchesCategory = selectedCategory === "All" || guide.category === selectedCategory;
+      const guideCategoryNormalized = normalizeCategory(guide.category || "");
+      const matchesCategory =
+        selectedCategory === "All" || guideCategoryNormalized === selectedCategory;
+
       const q = search.trim().toLowerCase();
       const matchesSearch =
         !q ||
-        guide.crop.toLowerCase().includes(q) ||
-        guide.displayName.toLowerCase().includes(q) ||
-        guide.category.toLowerCase().includes(q) ||
-        guide.overview.toLowerCase().includes(q);
+        (guide.crop && guide.crop.toLowerCase().includes(q)) ||
+        (guide.displayName && guide.displayName.toLowerCase().includes(q)) ||
+        (guide.category && guide.category.toLowerCase().includes(q)) ||
+        (guide.overview && guide.overview.toLowerCase().includes(q));
+
       return matchesCategory && matchesSearch;
     });
   }, [allGuides, selectedCategory, search]);
@@ -268,7 +282,7 @@ function CultivationIndexPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <h3 className="text-base font-semibold text-foreground">
-                        {guide.displayName}
+                        {guide.displayName || guide.crop}
                       </h3>
                       <span className="inline-block rounded-md bg-accent/40 px-2 py-0.5 text-[11px] font-medium text-foreground mt-0.5">
                         {guide.category}
@@ -298,7 +312,7 @@ function CultivationIndexPage() {
                           className="font-semibold text-foreground truncate"
                           title={guide.waterRequirement}
                         >
-                          {guide.waterRequirement.split(" ")[0]}
+                          {guide.waterRequirement?.split(" ")[0] || "N/A"}
                         </dd>
                       </div>
                     </div>

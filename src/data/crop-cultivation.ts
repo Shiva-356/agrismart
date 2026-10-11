@@ -47,7 +47,7 @@ export const ALL_ML_CROPS: string[] = [
 ];
 
 export const ALL_CULTIVATION_GUIDES: CropCultivationGuide[] = ALL_ML_CROPS.map(
-  (id) => CROP_CULTIVATION_DATABASE[id]!,
+  (id) => CROP_CULTIVATION_DATABASE[id]!
 );
 
 /**
