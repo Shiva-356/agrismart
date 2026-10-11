@@ -1,0 +1,6 @@
+{
+  "name": "AgriSmart",
+  "description": "Smart farming recommendations, soil analysis, crop planning, and agricultural advisory.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
