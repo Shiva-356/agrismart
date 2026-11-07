@@ -82,10 +82,22 @@ export function Navbar({ slot, className }: { slot?: ReactNode; className?: stri
                       <User aria-hidden="true" className="size-3.5" />
                     </span>
                     <span className="hidden max-w-[9rem] truncate sm:inline">{user.email}</span>
+                    {user.authMode === "demo" ? (
+                      <span className="rounded-full border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                        Demo
+                      </span>
+                    ) : null}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
+                  <DropdownMenuLabel className="space-y-0.5">
+                    <span className="block truncate">{user.email}</span>
+                    <span className="block text-[11px] font-normal text-muted-foreground">
+                      {user.authMode === "demo"
+                        ? "Demo Mode (unverified local preview)"
+                        : "Backend profile session"}
+                    </span>
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {overflow.map((item) => (
                     <DropdownMenuItem key={item.to} asChild>

@@ -1,0 +1,60 @@
+{
+  "randomSeed": 42,
+  "backbone": "MobileNetV1_0.50_224 (Apache-2.0, ImageNet pretrained)",
+  "featureExtraction": "Concatenated L2-normalized global_average_pooling2d_1 (512d) + L2-normalized spatial [mean, std] of conv_pw_11_relu (512d) => 1024d unit vector",
+  "classifier": "Class-balanced L2-regularized multinomial logistic regression",
+  "trainAugmentation": "5-crop (224x224 from 256px shortest-side resize) + horizontal flip of center crop (6 views/train image; val/test unaugmented single center crop)",
+  "selectedLambda": 0.003,
+  "temperature": 1.04,
+  "classWeights": {
+    "Sandy": 0.7308,
+    "Clayey": 1.0556,
+    "Loamy": 0.9048,
+    "Silty": 1.7273
+  },
+  "tuningGrid": [
+    {
+      "lambda": 0.001,
+      "valAccuracy": 0.5263,
+      "valMacroF1": 0.505,
+      "valNll": 1.267
+    },
+    {
+      "lambda": 0.003,
+      "valAccuracy": 0.5263,
+      "valMacroF1": 0.505,
+      "valNll": 1.2356
+    },
+    {
+      "lambda": 0.01,
+      "valAccuracy": 0.3684,
+      "valMacroF1": 0.3631,
+      "valNll": 1.2708
+    },
+    {
+      "lambda": 0.025,
+      "valAccuracy": 0.3684,
+      "valMacroF1": 0.3548,
+      "valNll": 1.3153
+    },
+    {
+      "lambda": 0.05,
+      "valAccuracy": 0.3158,
+      "valMacroF1": 0.3041,
+      "valNll": 1.3434
+    },
+    {
+      "lambda": 0.1,
+      "valAccuracy": 0.3684,
+      "valMacroF1": 0.3349,
+      "valNll": 1.3624
+    },
+    {
+      "lambda": 0.2,
+      "valAccuracy": 0.3684,
+      "valMacroF1": 0.3349,
+      "valNll": 1.3736
+    }
+  ],
+  "trainedAt": "2026-10-28T12:56:54.849Z"
+}

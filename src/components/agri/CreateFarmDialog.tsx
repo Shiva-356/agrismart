@@ -14,9 +14,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { loadUser, setActiveFarmId } from "@/lib/agri";
+import { isBackendUserSession, loadUser, setActiveFarmId } from "@/lib/agri";
+import { useAgriUser } from "@/hooks/use-agri-user";
 import { farmsApi, ApiError, type CreateFarmRequest } from "@/services/api";
-import { adaptFarmResponse, type Farm } from "@/services";
+import { API_BASE, adaptFarmResponse, type Farm } from "@/services";
 
 export interface CreateFarmDialogProps {
   trigger?: React.ReactNode;
@@ -45,8 +46,8 @@ export function CreateFarmDialog({
   const [irrigation, setIrrigation] = useState("Drip");
   const [loading, setLoading] = useState(false);
 
-  const user = loadUser();
-  const hasBackendUser = Boolean(user?.id);
+  const user = useAgriUser();
+  const hasBackendUser = Boolean(API_BASE) && isBackendUserSession(user);
 
   const resetForm = () => {
     setName("");
@@ -60,9 +61,10 @@ export function CreateFarmDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!user?.id) {
+    const currentUser = loadUser() ?? user;
+    if (!API_BASE || !isBackendUserSession(currentUser) || !currentUser?.id) {
       toast.error(
-        "A registered backend account is required to create a farm. Please log in or register first.",
+        "A registered backend profile is required to save farms to the server. Sign in with a backend profile first.",
       );
       return;
     }
@@ -74,7 +76,7 @@ export function CreateFarmDialog({
     }
 
     const payload: CreateFarmRequest = {
-      userId: user.id,
+      userId: currentUser.id,
       name: name.trim(),
       location: location.trim(),
       district: district.trim(),
@@ -86,9 +88,12 @@ export function CreateFarmDialog({
     setLoading(true);
     try {
       const response = await farmsApi.create(payload);
-      const adapted = adaptFarmResponse(response, user.fullName);
+      const adapted = adaptFarmResponse(response, currentUser.fullName);
       setActiveFarmId(adapted.id);
-      await queryClient.invalidateQueries({ queryKey: ["farm"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["farm"] }),
+        queryClient.invalidateQueries({ queryKey: ["farms"] }),
+      ]);
       toast.success(`Farm "${adapted.name}" created successfully!`);
       resetForm();
       setIsOpen(false);

@@ -1,0 +1,20 @@
+{
+  "indexToClass": {
+    "0": "Sandy",
+    "1": "Clayey",
+    "2": "Loamy",
+    "3": "Silty"
+  },
+  "classToIndex": {
+    "Sandy": 0,
+    "Clayey": 1,
+    "Loamy": 2,
+    "Silty": 3
+  },
+  "classToAgriSoilType": {
+    "Sandy": "Sandy",
+    "Clayey": "Clay",
+    "Loamy": "Loamy",
+    "Silty": "Silty"
+  }
+}

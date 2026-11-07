@@ -1,0 +1,243 @@
+{
+  "evaluatedAt": "2026-10-28T12:56:54.849Z",
+  "selectedModel": "MobileNetV1-MultiScale + Calibrated Logistic Head",
+  "backbone": "MobileNetV1_0.50_224",
+  "classes": [
+    "Sandy",
+    "Clayey",
+    "Loamy",
+    "Silty"
+  ],
+  "dataset": {
+    "name": "AgriSmart Curated Open-License Soil Texture Benchmark v1",
+    "sources": [
+      {
+        "name": "Poly Haven Ground & Soil Photogrammetry Scans",
+        "url": "https://polyhaven.com/textures/terrain",
+        "license": "CC0 1.0 Universal Public Domain"
+      },
+      {
+        "name": "AmbientCG Overhead Surface Material Captures (Flat 1K-JPG Diffuse)",
+        "url": "https://ambientcg.com",
+        "license": "CC0 1.0 Universal Public Domain"
+      },
+      {
+        "name": "Wikimedia Commons Field Soil & Loess Photographs",
+        "url": "https://commons.wikimedia.org",
+        "license": "Public Domain / CC0 / CC BY / CC BY-SA"
+      }
+    ],
+    "totalCleanSoilImages": 119,
+    "totalNonSoilOodImages": 19,
+    "deduplication": {
+      "exactSha256Removed": 0,
+      "crossClassNearDuplicatesRemoved": 0,
+      "sameClassNearDuplicatePairsGrouped": 0,
+      "independentClusters": 138
+    },
+    "splitStrategy": "Stratified cluster-grouped split (seed=42) after SHA-256 + 64-bit perceptual dHash deduplication (~65% train / ~15% val / ~20% held-out test; zero capture-series overlap).",
+    "classCounts": {
+      "Sandy": 40,
+      "Clayey": 29,
+      "Loamy": 32,
+      "Silty": 18
+    },
+    "splitCounts": {
+      "train": {
+        "Sandy": 26,
+        "Clayey": 18,
+        "Loamy": 21,
+        "Silty": 11
+      },
+      "val": {
+        "Sandy": 6,
+        "Clayey": 5,
+        "Loamy": 5,
+        "Silty": 3
+      },
+      "test": {
+        "Sandy": 8,
+        "Clayey": 6,
+        "Loamy": 6,
+        "Silty": 4
+      }
+    }
+  },
+  "metrics": {
+    "trainUnaugmented": {
+      "accuracy": 0.8289,
+      "macroF1": 0.8206
+    },
+    "validation": {
+      "accuracy": 0.5263,
+      "macroPrecision": 0.5833,
+      "macroRecall": 0.5083,
+      "macroF1": 0.505,
+      "preCalibrationNll": 1.2356,
+      "postCalibrationNll": 1.2353,
+      "preCalibrationEce": 0.1714,
+      "postCalibrationEce": 0.174
+    },
+    "heldOutTest": {
+      "sampleCount": 24,
+      "accuracy": 0.7083,
+      "macroPrecision": 0.6944,
+      "macroRecall": 0.6771,
+      "macroF1": 0.6599,
+      "nll": 0.9959,
+      "brierScore": 0.5361,
+      "ece": 0.2579,
+      "perClass": [
+        {
+          "className": "Sandy",
+          "agriSoilType": "Sandy",
+          "precision": 0.7778,
+          "recall": 0.875,
+          "f1": 0.8235,
+          "support": 8
+        },
+        {
+          "className": "Clayey",
+          "agriSoilType": "Clay",
+          "precision": 0.6667,
+          "recall": 0.3333,
+          "f1": 0.4444,
+          "support": 6
+        },
+        {
+          "className": "Loamy",
+          "agriSoilType": "Loamy",
+          "precision": 0.6667,
+          "recall": 1,
+          "f1": 0.8,
+          "support": 6
+        },
+        {
+          "className": "Silty",
+          "agriSoilType": "Silty",
+          "precision": 0.6667,
+          "recall": 0.5,
+          "f1": 0.5714,
+          "support": 4
+        }
+      ],
+      "confusionMatrix": [
+        [
+          7,
+          0,
+          1,
+          0
+        ],
+        [
+          2,
+          2,
+          1,
+          1
+        ],
+        [
+          0,
+          0,
+          6,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          2
+        ]
+      ]
+    },
+    "oodRejection": {
+      "heldOutNonSoilCount": 11,
+      "rejectedOrUncertainCount": 11,
+      "rejectionRate": 1,
+      "outcomes": [
+        {
+          "id": "ph_asphalt_04",
+          "category": "road_asphalt",
+          "status": "unsupported_input",
+          "rejectionReasonCode": "OUT_OF_DISTRIBUTION_OBJECT",
+          "manifoldSim": 0.8955
+        },
+        {
+          "id": "ph_bark_brown_02",
+          "category": "plant_bark",
+          "status": "uncertain",
+          "rejectionReasonCode": "LOW_CONFIDENCE_AMBIGUOUS",
+          "manifoldSim": 0.8459
+        },
+        {
+          "id": "ph_brick_wall_001",
+          "category": "building_brick",
+          "status": "unsupported_input",
+          "rejectionReasonCode": "OUT_OF_DISTRIBUTION_OBJECT",
+          "manifoldSim": 0.7857
+        },
+        {
+          "id": "ph_concrete_layers_02",
+          "category": "building_concrete",
+          "status": "unsupported_input",
+          "rejectionReasonCode": "OUT_OF_DISTRIBUTION_OBJECT",
+          "manifoldSim": 0.8623
+        },
+        {
+          "id": "ph_corrugated_iron",
+          "category": "manmade_metal",
+          "status": "unsupported_input",
+          "rejectionReasonCode": "OUT_OF_DISTRIBUTION_OBJECT",
+          "manifoldSim": 0.8479
+        },
+        {
+          "id": "ph_denim_fabric",
+          "category": "manmade_fabric",
+          "status": "unsupported_input",
+          "rejectionReasonCode": "NON_SOIL_SCENE",
+          "manifoldSim": 0.8333
+        },
+        {
+          "id": "ph_leaves_forest_ground",
+          "category": "plant_foliage",
+          "status": "uncertain",
+          "rejectionReasonCode": "LOW_CONFIDENCE_AMBIGUOUS",
+          "manifoldSim": 0.8602
+        },
+        {
+          "id": "ph_red_brick",
+          "category": "building_brick",
+          "status": "unsupported_input",
+          "rejectionReasonCode": "OUT_OF_DISTRIBUTION_OBJECT",
+          "manifoldSim": 0.7994
+        },
+        {
+          "id": "ph_wood_planks",
+          "category": "wood_surface",
+          "status": "unsupported_input",
+          "rejectionReasonCode": "OUT_OF_DISTRIBUTION_OBJECT",
+          "manifoldSim": 0.805
+        },
+        {
+          "id": "wm_ood_building_facade_395a04",
+          "category": "building_facade",
+          "status": "unsupported_input",
+          "rejectionReasonCode": "OUT_OF_DISTRIBUTION_OBJECT",
+          "manifoldSim": 0.8175
+        },
+        {
+          "id": "wm_ood_road_asphalt_a6eaf6",
+          "category": "road_asphalt",
+          "status": "uncertain",
+          "rejectionReasonCode": "LOW_CONFIDENCE_AMBIGUOUS",
+          "manifoldSim": 0.9287
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "Dataset scale (~120 verified real soil images across 4 textural classes, with Silty having the smallest support at ~21 images) means rare regional sub-textures (e.g., black vertisols, volcanic andisols, or wet silty clay loams) may trigger 'uncertain' or neighbour-class predictions.",
+    "RGB surface photographs capture only the top millimetres of soil; subsurface horizons, moisture film from rain/irrigation, harsh midday shadows, and camera white-balance shifts can alter apparent colour and aggregate contrast.",
+    "Out-of-distribution rejection reliably filters vegetation-dominated scenes, sky/water backgrounds, blank/corrupt frames, and common semantic objects (roads, buildings, people), but close-up non-soil brown granular surfaces (e.g., sandpaper, cork, weathered sandstone, or brown carpet) can still resemble mineral soil in 2D RGB space.",
+    "Visual soil texture classification NEVER measures chemical soil fertility (N, P, K, pH, EC, organic carbon) and must never replace accredited laboratory testing."
+  ],
+  "exportedTestFixturesCount": 12
+}

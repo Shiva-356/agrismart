@@ -25,8 +25,10 @@ import java.time.format.DateTimeFormatter;
  * Implements strict numerical and measurement validation:
  * - Air temperature (°C) must be present and finite.
  * - Relative humidity (%) must be present and finite.
- * - Rainfall (mm) must be present and finite.
- * - Missing rainfall is never silently replaced with 0.0.
+ * - Current/preceding-interval precipitation (mm) must be present and finite.
+ * - Missing precipitation is never silently replaced with 0.0.
+ * - Note: Open-Meteo {@code current.rain} and {@code current.precipitation} measure short-interval
+ *   weather precipitation only and must NEVER be used as growing-season cumulative rainfall for ML inference.
  * - Provider errors and unavailable states are propagated explicitly.
  */
 @Component

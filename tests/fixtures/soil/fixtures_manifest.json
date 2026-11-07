@@ -1,0 +1,114 @@
+[
+  {
+    "filename": "sandy_test_1.jpg",
+    "expectedClass": "Sandy",
+    "isOod": false,
+    "sourceId": "acg_Ground092A",
+    "sourcePlatform": "AmbientCG",
+    "sourceUrl": "https://ambientcg.com/view?id=Ground046",
+    "license": "CC0 1.0"
+  },
+  {
+    "filename": "sandy_test_2.jpg",
+    "expectedClass": "Sandy",
+    "isOod": false,
+    "sourceId": "acg_Ground046",
+    "sourcePlatform": "AmbientCG",
+    "sourceUrl": "https://ambientcg.com/view?id=Ground092A",
+    "license": "CC0 1.0"
+  },
+  {
+    "filename": "clayey_test_1.jpg",
+    "expectedClass": "Clayey",
+    "isOod": false,
+    "sourceId": "acg_Clay001",
+    "sourcePlatform": "AmbientCG",
+    "sourceUrl": "https://ambientcg.com/view?id=Clay001",
+    "license": "CC0 1.0"
+  },
+  {
+    "filename": "clayey_test_2.jpg",
+    "expectedClass": "Clayey",
+    "isOod": false,
+    "sourceId": "acg_Clay005",
+    "sourcePlatform": "AmbientCG",
+    "sourceUrl": "https://ambientcg.com/view?id=Clay005",
+    "license": "CC0 1.0"
+  },
+  {
+    "filename": "loamy_test_1.jpg",
+    "expectedClass": "Loamy",
+    "isOod": false,
+    "sourceId": "acg_Ground018",
+    "sourcePlatform": "AmbientCG",
+    "sourceUrl": "https://ambientcg.com/view?id=Ground018",
+    "license": "CC0 1.0"
+  },
+  {
+    "filename": "loamy_test_2.jpg",
+    "expectedClass": "Loamy",
+    "isOod": false,
+    "sourceId": "acg_Ground082L",
+    "sourcePlatform": "AmbientCG",
+    "sourceUrl": "https://ambientcg.com/view?id=Ground082L",
+    "license": "CC0 1.0"
+  },
+  {
+    "filename": "silty_test_1.jpg",
+    "expectedClass": "Silty",
+    "isOod": false,
+    "sourceId": "acg_Ground105",
+    "sourcePlatform": "AmbientCG",
+    "sourceUrl": "https://ambientcg.com/view?id=Ground105",
+    "license": "CC0 1.0"
+  },
+  {
+    "filename": "silty_test_2.jpg",
+    "expectedClass": "Silty",
+    "isOod": false,
+    "sourceId": "wm_filtration_limon_55a9ad",
+    "sourcePlatform": "Wikimedia Commons",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File%3AFiltration_du_limon.JPG",
+    "license": "CC BY-SA 3.0"
+  },
+  {
+    "filename": "ood_road_asphalt_1.jpg",
+    "expectedClass": null,
+    "oodCategory": "road_asphalt",
+    "isOod": true,
+    "sourceId": "ph_asphalt_04",
+    "sourcePlatform": "Poly Haven",
+    "sourceUrl": "https://polyhaven.com/a/asphalt_04",
+    "license": "CC0 1.0"
+  },
+  {
+    "filename": "ood_plant_foliage_2.jpg",
+    "expectedClass": null,
+    "oodCategory": "plant_foliage",
+    "isOod": true,
+    "sourceId": "ph_leaves_forest_ground",
+    "sourcePlatform": "Poly Haven",
+    "sourceUrl": "https://polyhaven.com/a/leaves_forest_ground",
+    "license": "CC0 1.0"
+  },
+  {
+    "filename": "ood_building_brick_3.jpg",
+    "expectedClass": null,
+    "oodCategory": "building_brick",
+    "isOod": true,
+    "sourceId": "ph_brick_wall_001",
+    "sourcePlatform": "Poly Haven",
+    "sourceUrl": "https://polyhaven.com/a/brick_wall_001",
+    "license": "CC0 1.0"
+  },
+  {
+    "filename": "ood_plant_bark_4.jpg",
+    "expectedClass": null,
+    "oodCategory": "plant_bark",
+    "isOod": true,
+    "sourceId": "ph_bark_brown_02",
+    "sourcePlatform": "Poly Haven",
+    "sourceUrl": "https://polyhaven.com/a/bark_brown_02",
+    "license": "CC0 1.0"
+  }
+]

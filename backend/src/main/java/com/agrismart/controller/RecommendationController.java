@@ -1,14 +1,15 @@
 package com.agrismart.controller;
 
+import com.agrismart.dto.recommendation.RecommendationRequest;
 import com.agrismart.dto.recommendation.RecommendationResponse;
 import com.agrismart.service.RecommendationService;
-import com.agrismart.weather.WeatherObservation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -16,7 +17,9 @@ import java.util.UUID;
 /**
  * REST controller for generating ML-powered crop recommendations for farms.
  *
- * Integrates verified laboratory soil reports and real-time weather observations.
+ * Requires verified laboratory soil chemistry, ambient temperature & humidity,
+ * and an explicit growing-season cumulative rainfall ({@code seasonalRainfallMm}).
+ * Hourly weather station precipitation is never used as seasonal rainfall.
  */
 @RestController
 @RequestMapping("/api/farms")
@@ -30,31 +33,33 @@ public class RecommendationController {
 
     /**
      * Generates a crop recommendation for the specified farm using its latest verified
-     * laboratory soil report and real-time weather observations.
+     * laboratory soil report, real-time ambient temperature & humidity, and explicit
+     * growing-season cumulative rainfall ({@code seasonalRainfallMm}).
      *
-     * GET /api/farms/{farmId}/recommendation
+     * GET /api/farms/{farmId}/recommendation?seasonalRainfallMm={mm}
      */
     @GetMapping("/{farmId}/recommendation")
-    public ResponseEntity<RecommendationResponse> getRecommendation(@PathVariable UUID farmId) {
-        RecommendationResponse response = recommendationService.recommend(farmId);
+    public ResponseEntity<RecommendationResponse> getRecommendation(
+            @PathVariable UUID farmId,
+            @RequestParam(required = false) Double seasonalRainfallMm
+    ) {
+        RecommendationResponse response = recommendationService.recommend(farmId, seasonalRainfallMm);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * Generates a crop recommendation for the specified farm with an optional explicit weather observation
-     * (useful for simulations or field tests). If no weather payload is provided, real-time weather
-     * is automatically obtained for the farm's location.
+     * Generates a crop recommendation for the specified farm using an explicit
+     * {@link RecommendationRequest} payload carrying {@code seasonalRainfallMm} and optional
+     * ambient temperature/humidity overrides.
      *
      * POST /api/farms/{farmId}/recommendation
      */
     @PostMapping("/{farmId}/recommendation")
     public ResponseEntity<RecommendationResponse> generateRecommendation(
             @PathVariable UUID farmId,
-            @RequestBody(required = false) WeatherObservation weather
+            @RequestBody(required = false) RecommendationRequest request
     ) {
-        RecommendationResponse response = (weather != null && weather.hasAllMeasurements())
-                ? recommendationService.recommend(farmId, weather)
-                : recommendationService.recommend(farmId);
+        RecommendationResponse response = recommendationService.recommend(farmId, request);
         return ResponseEntity.ok(response);
     }
 }

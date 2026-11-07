@@ -263,9 +263,9 @@ export async function fetchWttrInWeather(
     }
 
     return {
-      temperatureC: isNaN(temp) ? 28 : Math.round(temp * 10) / 10,
-      humidityPct: isNaN(hum) ? 62 : Math.round(hum),
-      rainfallMm: isNaN(rain) ? 0 : Math.round(rain * 10) / 10,
+      temperatureC: isNaN(temp) ? null : Math.round(temp * 10) / 10,
+      humidityPct: isNaN(hum) ? null : Math.round(hum),
+      rainfallMm: isNaN(rain) ? null : Math.round(rain * 10) / 10,
       condition: curr.weatherDesc?.[0]?.value || "Observed",
       observedAt: new Date().toISOString(),
       forecast: forecastList,
@@ -273,8 +273,8 @@ export async function fetchWttrInWeather(
         locationName || `Coordinates (${latitude.toFixed(2)}°N, ${longitude.toFixed(2)}°E)`,
       latitude,
       longitude,
-      sourceDetails: "OpenAPI Live Backup (Live)",
-      isLive: true,
+      sourceDetails: "wttr.in Weather API (Live Backup)",
+      isLive: !isNaN(temp) || !isNaN(hum),
     };
   } finally {
     clearTimeout(timeoutId);
@@ -282,7 +282,8 @@ export async function fetchWttrInWeather(
 }
 
 /**
- * Resilient regional climate model for agricultural coordinates when upstream APIs encounter 503 Service Unavailable.
+ * Offline synthetic seasonal estimate used ONLY when both live weather APIs fail.
+ * Strictly marked `isLive: false` so consumers never present estimated numbers as live observations.
  */
 export function generateClimateEstimateWeather(
   latitude: number,
@@ -301,7 +302,11 @@ export function generateClimateEstimateWeather(
 
   const humidity = isMonsoon ? 80 : isSummer ? 48 : 64;
   const rainfall = isMonsoon ? 2.5 : 0.0;
-  const condition = isMonsoon ? "Light rain" : isSummer ? "Sunny & warm" : "Partly cloudy";
+  const condition = isMonsoon
+    ? "Light rain (estimated)"
+    : isSummer
+      ? "Sunny & warm (estimated)"
+      : "Partly cloudy (estimated)";
 
   return {
     temperatureC: temp,
@@ -333,15 +338,16 @@ export function generateClimateEstimateWeather(
       locationName || `Field Coordinates (${latitude.toFixed(2)}°N, ${longitude.toFixed(2)}°E)`,
     latitude,
     longitude,
-    sourceDetails: "Regional Climate Station (503 Fallback)",
-    isLive: true,
+    sourceDetails: "Regional Climate Estimate (Offline Fallback — Not Live)",
+    isLive: false,
   };
 }
 
 /**
  * Fetches live weather observations for coordinates using Open-Meteo OpenAPI,
- * with automatic fallback to secondary OpenAPI provider and regional climate model
- * if Open-Meteo returns HTTP 503 or encounters rate limits.
+ * with automatic fallback to secondary OpenAPI provider and offline climate estimate
+ * (explicitly marked `isLive: false`) if live providers fail.
+ * Note: `rainfallMm` represents current/hourly precipitation, never seasonal cumulative rainfall.
  */
 export async function fetchOpenMeteoWeather(
   latitude: number,

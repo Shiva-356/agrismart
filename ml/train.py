@@ -275,6 +275,9 @@ def main() -> None:
 def export_model(pipeline: Pipeline, labels: list[str], path: str) -> None:
     """Export a fitted tree-ensemble pipeline to JSON for the JS runtime.
 
+    Exports full IEEE-754 double-precision split thresholds and normalized leaf
+    class distributions so TypeScript inference reproduces scikit-learn
+    `RandomForestClassifier.predict_proba()` semantics.
     Only supported for forests of decision trees; other estimators are skipped
     (the app then requires the FastAPI service for predictions).
     """
@@ -286,23 +289,33 @@ def export_model(pipeline: Pipeline, labels: list[str], path: str) -> None:
     trees = []
     for e in est.estimators_:
         t = e.tree_
+        leaf_dists: list[list[list[float | int]] | None] = []
+        for i in range(t.node_count):
+            if t.children_left[i] == -1:
+                row = np.asarray(t.value[i][0], dtype=np.float64)
+                total = float(np.sum(row))
+                probs = (row / total) if total > 0.0 else row
+                leaf_dists.append(
+                    [[int(ci), float(p)] for ci, p in enumerate(probs) if float(p) > 0.0]
+                )
+            else:
+                leaf_dists.append(None)
         trees.append(
             {
-                "l": t.children_left.tolist(),
-                "r": t.children_right.tolist(),
-                "f": t.feature.tolist(),
-                "t": [round(float(v), 6) for v in t.threshold.tolist()],
-                "v": [
-                    int(np.argmax(t.value[i][0])) if t.children_left[i] == -1 else -1
-                    for i in range(t.node_count)
-                ],
+                "l": [int(v) for v in t.children_left.tolist()],
+                "r": [int(v) for v in t.children_right.tolist()],
+                "f": [int(v) for v in t.feature.tolist()],
+                "t": [float(v) for v in t.threshold.tolist()],
+                "d": leaf_dists,
             }
         )
     with open(path, "w") as f:
         json.dump(
             {
                 "supported": True,
-                "kind": "random_forest_majority_vote",
+                "kind": "random_forest_predict_proba",
+                "scoringMethod": "predict_proba_mean_leaf_distribution",
+                "calibrated": False,
                 "features": FEATURES,
                 "classes": labels,
                 "trees": trees,

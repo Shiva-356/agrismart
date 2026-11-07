@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0",
+  "colorSpace": "RGB",
+  "exifTranspose": true,
+  "resizeShortestSide": 256,
+  "interpolation": "bilinear",
+  "centerCropSize": 224,
+  "normalization": "mobilenet_v1_minus1_to_plus1",
+  "scaleDivisor": 127.5,
+  "scaleOffset": -1,
+  "supportedMimeTypes": [
+    "image/jpeg",
+    "image/jpg",
+    "image/png"
+  ]
+}

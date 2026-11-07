@@ -99,12 +99,17 @@ export function WeatherCard({
         coords.longitude,
         `Field GPS (${coords.latitude.toFixed(2)}°N, ${coords.longitude.toFixed(2)}°E)`,
       );
+      const resolvedSource: DataSource = live.isLive ? "api" : "demo";
       setCurrentWeather(live);
-      setCurrentSource("api");
+      setCurrentSource(resolvedSource);
       setCurrentFetchedAt(live.observedAt);
       setHasUserOverridden(true);
-      onWeatherUpdated?.(live, "api");
-      toast.success("Location identified. Field weather updated.");
+      onWeatherUpdated?.(live, resolvedSource);
+      if (live.isLive) {
+        toast.success("Location identified. Live field weather updated.");
+      } else {
+        toast.info("Live weather API unavailable — showing regional climate estimate (not live).");
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Unable to retrieve browser location.";
       setPermissionDeniedError(msg);
@@ -140,15 +145,22 @@ export function WeatherCard({
 
     try {
       const live = await fetchOpenMeteoWeather(lat, lon, label);
+      const resolvedSource: DataSource = live.isLive ? "api" : "demo";
       setCurrentWeather(live);
-      setCurrentSource("api");
+      setCurrentSource(resolvedSource);
       setCurrentFetchedAt(live.observedAt);
       setHasUserOverridden(true);
-      onWeatherUpdated?.(live, "api");
-      toast.success(`Weather updated for ${label}`);
+      onWeatherUpdated?.(live, resolvedSource);
+      if (live.isLive) {
+        toast.success(`Live weather updated for ${label}`);
+      } else {
+        toast.info(
+          `Live weather API unavailable for ${label} — showing regional climate estimate (not live).`,
+        );
+      }
     } catch (err) {
       console.warn("Weather load notice:", err);
-      toast.error("Could not load live station data; regional field climate applied.");
+      toast.error("Could not load weather for the selected locality.");
     } finally {
       setLoading(false);
     }
@@ -163,11 +175,18 @@ export function WeatherCard({
           currentWeather.longitude,
           currentWeather.locationName || undefined,
         );
+        const resolvedSource: DataSource = live.isLive ? "api" : "demo";
         setCurrentWeather(live);
-        setCurrentSource("api");
+        setCurrentSource(resolvedSource);
         setCurrentFetchedAt(live.observedAt);
-        onWeatherUpdated?.(live, "api");
-        toast.success("Field weather refreshed.");
+        onWeatherUpdated?.(live, resolvedSource);
+        if (live.isLive) {
+          toast.success("Live field weather refreshed.");
+        } else {
+          toast.info(
+            "Live weather API unavailable — showing regional climate estimate (not live).",
+          );
+        }
       } catch (err) {
         console.warn("Refresh failed:", err);
         toast.error("Unable to refresh at this moment.");
@@ -192,11 +211,13 @@ export function WeatherCard({
     },
     {
       icon: CloudRain,
-      label: "Rainfall",
+      label: "Current Rain (1h)",
       value: currentWeather.rainfallMm,
       unit: "mm",
     },
   ];
+
+  const isTrulyLive = Boolean(currentWeather.isLive && currentSource === "api");
 
   return (
     <>
@@ -206,17 +227,21 @@ export function WeatherCard({
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2
                 id="weather-card-title"
                 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"
               >
                 Field weather
               </h2>
-              {currentWeather.isLive && (
+              {isTrulyLive ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[0.625rem] font-semibold text-emerald-700 dark:text-emerald-400">
                   <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Live OpenAPI
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/35 bg-amber-500/10 px-2 py-0.5 text-[0.625rem] font-semibold text-amber-800 dark:text-amber-300">
+                  Estimated / Demo (Not Live)
                 </span>
               )}
             </div>
@@ -238,7 +263,7 @@ export function WeatherCard({
                 </span>
               )}
               <span suppressHydrationWarning className="text-muted-foreground/80">
-                • Observed{" "}
+                • {isTrulyLive ? "Observed " : "Generated "}
                 {new Date(currentWeather.observedAt).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
@@ -272,9 +297,9 @@ export function WeatherCard({
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
           <div className="text-xs text-muted-foreground">
             {currentWeather.sourceDetails ||
-              (currentSource === "api"
-                ? "Open-Meteo OpenAPI Service"
-                : "Local Field Station Model")}
+              (isTrulyLive
+                ? "Open-Meteo OpenAPI Service (Live)"
+                : "Estimated / Demo Weather Snapshot (Not Live)")}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">

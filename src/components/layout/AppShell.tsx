@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { MobileNavigation } from "@/components/layout/MobileNavigation";
 import { Navbar } from "@/components/layout/Navbar";
+import { useAgriUser } from "@/hooks/use-agri-user";
 import { useT } from "@/i18n";
 import { USING_DEMO_ADAPTERS } from "@/services";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,8 @@ export function AppShell({
   className?: string | undefined;
 }) {
   const t = useT();
+  const user = useAgriUser();
+  const showDemoBanner = USING_DEMO_ADAPTERS || user?.authMode === "demo";
   const maxWidth = width === "full" ? "max-w-none" : width === "wide" ? "max-w-7xl" : "max-w-6xl";
 
   return (
@@ -32,7 +35,7 @@ export function AppShell({
         {t.nav.skipToContent}
       </a>
       <Navbar slot={navSlot} />
-      {USING_DEMO_ADAPTERS ? (
+      {showDemoBanner ? (
         <p className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-center text-xs font-medium text-foreground">
           <span className="mr-2 rounded-full bg-amber-500/25 px-2 py-0.5 uppercase tracking-wide">
             {t.common.demoData}

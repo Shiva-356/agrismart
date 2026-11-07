@@ -1,4 +1,4 @@
-import { CheckCircle2, Info, MinusCircle } from "lucide-react";
+import { CheckCircle2, Info, Layers, MinusCircle } from "lucide-react";
 import type { DataSource, RecommendationResult } from "@/services/types";
 import { DataSourceBadge } from "@/components/common/DataSourceBadge";
 import { ReliabilityBadge, StatusBadge } from "@/components/common/StatusBadge";
@@ -15,12 +15,14 @@ export function ExplanationPanel({
   source,
   fetchedAt,
   showChart = true,
+  title = "Why this crop?",
   className,
 }: {
   result: RecommendationResult;
   source: DataSource;
   fetchedAt?: string | undefined;
   showChart?: boolean;
+  title?: string | undefined;
   className?: string | undefined;
 }) {
   const completeness = result.dataCompletenessPct;
@@ -33,7 +35,7 @@ export function ExplanationPanel({
             id="explanation-title"
             className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"
           >
-            Why this recommendation
+            {title}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-foreground">{result.explanation}</p>
         </div>
@@ -42,12 +44,35 @@ export function ExplanationPanel({
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <ReliabilityBadge reliability={result.reliability} />
+        {result.sourcesUsed && result.sourcesUsed.length > 0 ? (
+          <StatusBadge
+            label={`Sources: ${result.sourcesUsed.join(" + ")}`}
+            tone={
+              result.mode === "hybrid"
+                ? "success"
+                : result.mode === "demo-hybrid"
+                  ? "warning"
+                  : "info"
+            }
+            icon={Layers}
+          />
+        ) : null}
         {completeness === null || completeness === undefined ? (
-          <StatusBadge label="Data completeness unavailable" tone="muted" icon={Info} />
+          <StatusBadge label="ML input completeness unavailable" tone="muted" icon={Info} />
         ) : (
-          <StatusBadge label={`Data completeness ${completeness}%`} tone="neutral" icon={Info} />
+          <StatusBadge
+            label={`ML input completeness ${completeness}%`}
+            tone="neutral"
+            icon={Info}
+          />
         )}
       </div>
+
+      {result.mlStatusMessage ? (
+        <p className="mt-2.5 rounded-lg border border-border/70 bg-muted/35 px-3 py-2 text-xs text-muted-foreground">
+          {result.mlStatusMessage}
+        </p>
+      ) : null}
 
       {completeness !== null && completeness !== undefined ? (
         <div
@@ -56,7 +81,7 @@ export function ExplanationPanel({
           aria-valuenow={completeness}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="Data completeness"
+          aria-label="ML input completeness"
         >
           <div
             className="h-full rounded-full bg-accent transition-[width] duration-500"
@@ -67,7 +92,7 @@ export function ExplanationPanel({
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Data used</h3>
+          <h3 className="text-sm font-semibold text-foreground">Information used</h3>
           {result.dataUsed.length ? (
             <ul className="mt-2 space-y-1.5">
               {result.dataUsed.map((d) => (
@@ -85,7 +110,7 @@ export function ExplanationPanel({
           )}
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Missing data</h3>
+          <h3 className="text-sm font-semibold text-foreground">Information still needed</h3>
           {result.dataMissing.length ? (
             <ul className="mt-2 space-y-1.5">
               {result.dataMissing.map((d) => (

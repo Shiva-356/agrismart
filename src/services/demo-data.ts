@@ -37,6 +37,8 @@ export const demoWeather: Weather = {
     { day: "Day 3", condition: "Cloudy", maxC: 31, minC: 24 },
     { day: "Day 4", condition: "Sunny", maxC: 33, minC: 24 },
   ],
+  sourceDetails: "Sample Weather Snapshot (Demo — Not Live)",
+  isLive: false,
 };
 
 export const demoProviders: Provider[] = [

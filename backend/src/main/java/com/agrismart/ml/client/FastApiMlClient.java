@@ -2,6 +2,7 @@ package com.agrismart.ml.client;
 
 import com.agrismart.dto.recommendation.RankedCropResponse;
 import com.agrismart.exception.MlServiceException;
+import com.agrismart.exception.RecommendationPrerequisiteException;
 import com.agrismart.ml.dto.MlPredictionRequest;
 import com.agrismart.ml.dto.MlPredictionResponse;
 import org.slf4j.Logger;
@@ -20,7 +21,7 @@ import java.util.List;
  * Spring RestClient implementation calling the FastAPI inference service.
  *
  * Never fabricates predictions or falls back to synthetic data.
- * Propagates explicit ML_SERVICE_UNAVAILABLE and ML_SERVICE_INVALID_RESPONSE errors.
+ * Distinguishes client/input validation errors (400/422) from ML service outages (503).
  */
 @Component
 public class FastApiMlClient implements MlPredictionClient {
@@ -37,6 +38,10 @@ public class FastApiMlClient implements MlPredictionClient {
     public MlPredictionResponse predict(MlPredictionRequest request) {
         if (request == null || !request.isComplete()) {
             throw new IllegalArgumentException("ML prediction request cannot be null or have incomplete features");
+        }
+        String boundsError = request.findFirstOutOfBoundsError();
+        if (boundsError != null) {
+            throw new RecommendationPrerequisiteException("ML_INPUT_OUT_OF_RANGE", boundsError);
         }
 
         FastApiPredictRequest apiRequest = new FastApiPredictRequest(
@@ -62,9 +67,16 @@ public class FastApiMlClient implements MlPredictionClient {
                             body = new String(resp.getBody().readAllBytes(), StandardCharsets.UTF_8);
                         } catch (Exception ignored) {
                         }
+                        int statusCode = resp.getStatusCode().value();
                         log.error("FastAPI ML service error {}: {}", resp.getStatusCode(), body);
 
-                        if (resp.getStatusCode().value() == 503) {
+                        if (statusCode == 400 || statusCode == 422) {
+                            throw new RecommendationPrerequisiteException(
+                                    "ML_INPUT_INVALID",
+                                    "ML input validation failed (" + statusCode + "): " + body
+                            );
+                        }
+                        if (statusCode == 503) {
                             throw new MlServiceException("ML_SERVICE_UNAVAILABLE", "ML model service unavailable: " + body);
                         }
                         throw new MlServiceException("ML_SERVICE_INVALID_RESPONSE", "ML service returned error " + resp.getStatusCode() + ": " + body);
@@ -90,7 +102,7 @@ public class FastApiMlClient implements MlPredictionClient {
                     response.classCount(),
                     response.note()
             );
-        } catch (MlServiceException e) {
+        } catch (RecommendationPrerequisiteException | IllegalArgumentException | MlServiceException e) {
             throw e;
         } catch (ResourceAccessException e) {
             log.error("Unable to connect to FastAPI ML service", e);

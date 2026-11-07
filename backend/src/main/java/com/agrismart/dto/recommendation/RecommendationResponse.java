@@ -32,5 +32,10 @@ public record RecommendationResponse(
             LocalDate soilReportDate,
             Instant weatherObservedAt,
             String weatherSource
-    ) {}
+    ) {
+        @com.fasterxml.jackson.annotation.JsonProperty("seasonalRainfallMm")
+        public Double seasonalRainfallMm() {
+            return rainfall;
+        }
+    }
 }

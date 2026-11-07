@@ -1,13 +1,21 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, FileText, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
 import { LoadingSkeleton } from "@/components/common/LoadingSkeleton";
 import { SoilReportCard } from "@/components/agri/SoilReportCard";
-import { soilReportsService } from "@/services";
+import { buildActivePlanFromSoilReport, loadActivePlan, saveActivePlan } from "@/lib/agri";
+import {
+  soilReportsService,
+  type Envelope,
+  type Farm,
+  type SoilReport,
+  type Weather,
+} from "@/services";
 
 export const Route = createFileRoute("/soil-reports/$id")({
   head: () => ({
@@ -33,8 +41,36 @@ export const Route = createFileRoute("/soil-reports/$id")({
 
 function SoilReportDetailPage() {
   const { id } = Route.useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const q = useQuery({ queryKey: ["soil-report", id], queryFn: () => soilReportsService.byId(id) });
   const report = q.data?.data ?? null;
+
+  const handleUseForRecommendation = (selected: SoilReport) => {
+    const cachedFarm = queryClient.getQueryData<Envelope<Farm | null>>(["farm"])?.data ?? null;
+    const cachedWeather = cachedFarm?.id
+      ? (queryClient.getQueryData<Envelope<Weather>>(["weather", cachedFarm.id])?.data ?? null)
+      : null;
+
+    const nextPlan = buildActivePlanFromSoilReport({
+      report: selected,
+      existingPlan: loadActivePlan(),
+      fallbackFarm: cachedFarm,
+      ambientWeather: cachedWeather,
+    });
+    saveActivePlan(nextPlan);
+
+    const loadedCount = nextPlan.linkedSoilReport?.loadedKeys.length ?? 0;
+    toast.success(
+      loadedCount > 0
+        ? `Applied ${loadedCount} verified soil measurement${loadedCount === 1 ? "" : "s"} from ${selected.laboratory}.`
+        : `Linked report from ${selected.laboratory} (no tested N/P/K/pH values found).`,
+    );
+    void navigate({
+      to: "/recommendations",
+      search: { soilReportId: selected.id },
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -81,11 +117,13 @@ function SoilReportDetailPage() {
               <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
                 Use your verified soil information to improve your crop recommendation.
               </p>
-              <Button asChild className="mt-5">
-                <Link to="/recommendations">
-                  <Sparkles aria-hidden="true" className="size-4" />
-                  Use for recommendation
-                </Link>
+              <Button
+                type="button"
+                className="mt-5"
+                onClick={() => handleUseForRecommendation(report)}
+              >
+                <Sparkles aria-hidden="true" className="size-4" />
+                Use for recommendation
               </Button>
             </section>
           ) : (

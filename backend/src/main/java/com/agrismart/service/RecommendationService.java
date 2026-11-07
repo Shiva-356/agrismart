@@ -1,5 +1,6 @@
 package com.agrismart.service;
 
+import com.agrismart.dto.recommendation.RecommendationRequest;
 import com.agrismart.dto.recommendation.RecommendationResponse;
 import com.agrismart.entity.Farm;
 import com.agrismart.entity.SoilReport;
@@ -22,14 +23,17 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Service orchestrating verified soil report retrieval, weather validation,
- * and ML-powered crop recommendation.
+ * Service orchestrating verified soil report retrieval, ambient weather validation,
+ * explicit growing-season rainfall validation, and ML-powered crop recommendation.
  *
- * Enforces strict production eligibility:
+ * Enforces strict production data integrity:
  * - The soil report MUST be verified by a laboratory/authority.
- * - All four soil chemical features (N, P, K, pH) MUST be genuinely present.
- * - All three weather features (temperature, humidity, rainfall) MUST be provided.
- * - Never fabricates fake crop recommendations if ML inference fails.
+ * - All four soil chemical features (N, P, K, pH) MUST be genuinely present and within model bounds.
+ * - Ambient temperature and relative humidity MUST be genuinely present and within model bounds.
+ * - Growing-season cumulative rainfall ({@code seasonalRainfallMm}) MUST be explicitly provided and within [0, 1000] mm;
+ *   current/hourly weather precipitation ({@code WeatherObservation.rainfall()}) is NEVER substituted.
+ * - Genuine zero seasonal rainfall ({@code 0.0}) is preserved and distinguished from missing ({@code null}).
+ * - Never fabricates crop recommendations or misreports input validation errors as ML service outages.
  */
 @Service
 @Transactional(readOnly = true)
@@ -55,56 +59,104 @@ public class RecommendationService {
     }
 
     /**
-     * Generates a crop recommendation for the specified farm by resolving its location,
-     * fetching genuine real-time weather observations, and combining them with the latest verified
-     * laboratory soil report.
-     *
-     * @param farmId the farm identifier
-     * @return the crop recommendation response with ranked predictions and feature traceability
+     * Overload without explicit seasonal rainfall.
+     * Deliberately passes {@code null} for {@code seasonalRainfallMm} so that hourly weather station
+     * precipitation is never silently substituted for growing-season rainfall.
      */
     public RecommendationResponse recommend(UUID farmId) {
+        return recommend(farmId, (Double) null);
+    }
+
+    /**
+     * Generates a crop recommendation using the farm's latest verified laboratory soil report,
+     * live ambient temperature & humidity for the farm's resolved location, and an explicit
+     * growing-season cumulative rainfall value.
+     *
+     * @param farmId             the farm identifier
+     * @param seasonalRainfallMm growing-season cumulative rainfall in mm ({@code null} if unknown; {@code 0.0} is valid)
+     * @return the crop recommendation response with ranked predictions and feature traceability
+     */
+    public RecommendationResponse recommend(UUID farmId, Double seasonalRainfallMm) {
         if (farmId == null) {
             throw new IllegalArgumentException("Farm ID cannot be null");
         }
 
-        // 1. Verify farm exists
         Farm farm = farmRepository.findById(farmId)
                 .orElseThrow(() -> new ResourceNotFoundException("Farm not found with ID: " + farmId));
 
-        // 2. Fetch real weather for the farm via WeatherService (resolves location + queries provider)
         if (weatherService == null) {
             throw new IllegalStateException("WeatherService is not configured");
         }
         WeatherObservation weather = weatherService.getWeatherForFarm(farm);
 
-        // 3. Delegate to core recommendation logic
-        return recommend(farm, weather);
+        return recommend(farm, weather, seasonalRainfallMm);
     }
 
     /**
-     * Generates a crop recommendation for the specified farm using its latest verified soil report
-     * combined with the provided weather observation.
-     *
-     * @param farmId the farm identifier
-     * @param weather real weather observation (temperature, humidity, rainfall)
-     * @return the crop recommendation response with ranked predictions and feature traceability
+     * Generates a crop recommendation using an explicit request DTO containing optional ambient
+     * weather overrides and required {@code seasonalRainfallMm}.
      */
-    public RecommendationResponse recommend(UUID farmId, WeatherObservation weather) {
+    public RecommendationResponse recommend(UUID farmId, RecommendationRequest request) {
         if (farmId == null) {
             throw new IllegalArgumentException("Farm ID cannot be null");
         }
 
-        // 1. Verify farm exists
         Farm farm = farmRepository.findById(farmId)
                 .orElseThrow(() -> new ResourceNotFoundException("Farm not found with ID: " + farmId));
 
-        return recommend(farm, weather);
+        WeatherObservation effectiveWeather;
+        if (request != null && request.temperature() != null && request.humidity() != null) {
+            effectiveWeather = new WeatherObservation(
+                    request.temperature(),
+                    request.humidity(),
+                    null,
+                    request.observedAt() != null ? request.observedAt() : Instant.now(),
+                    request.source() != null && !request.source().isBlank() ? request.source() : "Explicit Request"
+            );
+        } else {
+            if (weatherService == null) {
+                throw new IllegalStateException("WeatherService is not configured");
+            }
+            WeatherObservation liveWeather = weatherService.getWeatherForFarm(farm);
+            if (request == null) {
+                effectiveWeather = liveWeather;
+            } else {
+                effectiveWeather = new WeatherObservation(
+                        request.temperature() != null ? request.temperature() : (liveWeather != null ? liveWeather.temperature() : null),
+                        request.humidity() != null ? request.humidity() : (liveWeather != null ? liveWeather.humidity() : null),
+                        liveWeather != null ? liveWeather.rainfall() : null,
+                        request.observedAt() != null ? request.observedAt() : (liveWeather != null ? liveWeather.observedAt() : Instant.now()),
+                        request.source() != null && !request.source().isBlank()
+                                ? request.source()
+                                : (liveWeather != null ? liveWeather.source() : null)
+                );
+            }
+        }
+
+        Double seasonalRainfallMm = request != null ? request.seasonalRainfallMm() : null;
+        return recommend(farm, effectiveWeather, seasonalRainfallMm);
     }
 
-    private RecommendationResponse recommend(Farm farm, WeatherObservation weather) {
+    /**
+     * Generates a crop recommendation using the farm's latest verified soil report,
+     * ambient temperature/humidity from {@code weather}, and explicit {@code seasonalRainfallMm}.
+     * Hourly {@code weather.rainfall()} is never read or forwarded to the ML model.
+     */
+    public RecommendationResponse recommend(UUID farmId, WeatherObservation weather, Double seasonalRainfallMm) {
+        if (farmId == null) {
+            throw new IllegalArgumentException("Farm ID cannot be null");
+        }
+
+        Farm farm = farmRepository.findById(farmId)
+                .orElseThrow(() -> new ResourceNotFoundException("Farm not found with ID: " + farmId));
+
+        return recommend(farm, weather, seasonalRainfallMm);
+    }
+
+    private RecommendationResponse recommend(Farm farm, WeatherObservation weather, Double seasonalRainfallMm) {
         UUID farmId = farm.getId();
 
-        // 2. Find latest VERIFIED SoilReport for that farm
+        // 1. Find latest VERIFIED SoilReport for that farm
         SoilReport soilReport = soilReportRepository
                 .findTopByFarmIdAndVerifiedTrueOrderByTestDateDescCreatedAtDesc(farmId)
                 .orElseThrow(() -> new RecommendationPrerequisiteException(
@@ -112,7 +164,7 @@ public class RecommendationService {
                         "No verified laboratory soil report found for farm ID: " + farmId
                 ));
 
-        // 3. Reject if soil features (N, P, K, pH) are missing or incomplete
+        // 2. Reject if soil features (N, P, K, pH) are missing or non-finite
         if (soilReport.getNitrogen() == null) {
             throw new RecommendationPrerequisiteException(
                     "SOIL_FEATURES_INCOMPLETE",
@@ -138,7 +190,8 @@ public class RecommendationService {
             );
         }
 
-        // 4. Validate weather observation has all required features
+        // 3. Validate ambient weather observation has temperature and humidity
+        // Note: weather.rainfall() is current/hourly interval precipitation and is NEVER read here.
         if (weather == null) {
             throw new RecommendationPrerequisiteException(
                     "WEATHER_FEATURES_INCOMPLETE",
@@ -157,14 +210,16 @@ public class RecommendationService {
                     "Weather observation is missing valid humidity measurement"
             );
         }
-        if (weather.rainfall() == null || Double.isNaN(weather.rainfall()) || Double.isInfinite(weather.rainfall())) {
+
+        // 4. Require explicit growing-season cumulative rainfall (distinguishing null from genuine 0.0)
+        if (seasonalRainfallMm == null || Double.isNaN(seasonalRainfallMm) || Double.isInfinite(seasonalRainfallMm)) {
             throw new RecommendationPrerequisiteException(
-                    "WEATHER_FEATURES_INCOMPLETE",
-                    "Weather observation is missing valid rainfall measurement"
+                    "SEASONAL_RAINFALL_REQUIRED",
+                    "Growing-season rainfall (seasonalRainfallMm) is required for ML crop recommendation; current or hourly weather precipitation cannot be substituted"
             );
         }
 
-        // 5. Construct seven-feature ML request
+        // 5. Construct seven-feature ML request and validate model input bounds before calling ML service
         MlPredictionRequest mlRequest = new MlPredictionRequest(
                 soilReport.getNitrogen().doubleValue(),
                 soilReport.getPhosphorus().doubleValue(),
@@ -172,8 +227,13 @@ public class RecommendationService {
                 weather.temperature(),
                 weather.humidity(),
                 soilReport.getPh().doubleValue(),
-                weather.rainfall()
+                seasonalRainfallMm
         );
+
+        String boundsError = mlRequest.findFirstOutOfBoundsError();
+        if (boundsError != null) {
+            throw new RecommendationPrerequisiteException("ML_INPUT_OUT_OF_RANGE", boundsError);
+        }
 
         log.debug("Invoking ML prediction client for farm {} with soil report {}", farmId, soilReport.getId());
 
@@ -195,7 +255,7 @@ public class RecommendationService {
                         soilReport.getPh().doubleValue(),
                         weather.temperature(),
                         weather.humidity(),
-                        weather.rainfall(),
+                        seasonalRainfallMm,
                         soilReport.getTestDate(),
                         weather.observedAt(),
                         weather.source()

@@ -165,4 +165,35 @@ class FastApiMlClientTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("incomplete features");
     }
+
+    @Test
+    @DisplayName("Out-of-range request rejected with ML_INPUT_OUT_OF_RANGE before calling FastAPI")
+    void predictWithOutOfRangeRequestThrowsPrerequisiteException() {
+        MlPredictionRequest outOfRange = new MlPredictionRequest(
+                90.0, 42.0, 43.0, 26.5, 78.0, 6.5, 1500.0
+        );
+
+        assertThatThrownBy(() -> mlClient.predict(outOfRange))
+                .isInstanceOf(com.agrismart.exception.RecommendationPrerequisiteException.class)
+                .satisfies(e -> assertThat(((com.agrismart.exception.RecommendationPrerequisiteException) e).getErrorCode())
+                        .isEqualTo("ML_INPUT_OUT_OF_RANGE"));
+    }
+
+    @Test
+    @DisplayName("FastAPI 422 validation error maps to ML_INPUT_INVALID (not 503 ML_SERVICE_UNAVAILABLE)")
+    void predictWhenFastApiReturns422ThrowsPrerequisiteExceptionNotOutage() {
+        mockServer.expect(requestTo("http://localhost:8000/predict"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+                        .body("{\"detail\":\"Input should be less than or equal to 1000\"}"));
+
+        assertThatThrownBy(() -> mlClient.predict(validRequest))
+                .isInstanceOf(com.agrismart.exception.RecommendationPrerequisiteException.class)
+                .satisfies(e -> {
+                    var ex = (com.agrismart.exception.RecommendationPrerequisiteException) e;
+                    assertThat(ex.getErrorCode()).isEqualTo("ML_INPUT_INVALID");
+                });
+
+        mockServer.verify();
+    }
 }

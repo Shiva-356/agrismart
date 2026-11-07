@@ -4,7 +4,6 @@ import {
   demoMlEvaluation,
   demoNotifications,
   demoProviders,
-  demoRecommendation,
   demoReports,
   demoWeather,
 } from "./demo-data";
@@ -21,6 +20,7 @@ import {
 } from "./weather";
 import evaluationArtifact from "./ml/evaluation_results.json";
 import {
+  API_BASE_URL,
   ApiError,
   apiGet,
   appointmentsApi,
@@ -38,12 +38,28 @@ import {
   type FarmResponse,
   type ProviderResponse,
   type RankedCropResponse,
+  type RecommendationRequest,
   type RecommendationResponse,
   type SoilReportResponse,
   type UpdateFarmRequest,
-  type WeatherObservation,
 } from "./api";
-import { getActiveFarmId, loadUser, setActiveFarmId, setUser } from "@/lib/agri";
+import {
+  clearAllHistory,
+  deleteHistoryRecord,
+  findDemoProfile,
+  getActiveFarmId,
+  isBackendUserSession,
+  loadHistory,
+  loadUser,
+  saveDemoProfile,
+  saveHistoryEntry,
+  setActiveFarmId,
+  setUser,
+  type DeleteHistoryResult,
+  type HistoryEntry,
+  type MlPredictionFeatures,
+  type UserSession,
+} from "@/lib/agri";
 import type {
   Appointment,
   CropPrediction,
@@ -69,12 +85,20 @@ export type { CropCultivationGuide } from "@/data/crop-cultivation";
 /**
  * Service layer. Each domain has its own adapter so a real API client can
  * replace the demo adapter without touching any component.
+ * Uses the centrally resolved API base URL from the API client.
  */
-export const API_BASE =
-  typeof import.meta !== "undefined" && import.meta.env
-    ? (import.meta.env["VITE_AGRISMART_API_URL"] as string | undefined)
-    : undefined;
+export const API_BASE = API_BASE_URL;
 export const USING_DEMO_ADAPTERS = !API_BASE;
+
+/**
+ * Returns true when no backend API URL is configured OR the user explicitly
+ * opted into an unauthenticated local Demo Mode session.
+ */
+export function shouldUseDemoAdapters(): boolean {
+  if (!API_BASE) return true;
+  const current = loadUser();
+  return current?.authMode === "demo";
+}
 
 const LATENCY = 250;
 
@@ -84,7 +108,7 @@ async function demo<T>(data: T): Promise<Envelope<T>> {
 }
 
 async function get<T>(path: string, fallback: T): Promise<Envelope<T>> {
-  if (!API_BASE) return demo(fallback);
+  if (shouldUseDemoAdapters()) return demo(fallback);
   const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) throw new Error(`Request failed (${res.status})`);
   return { data: (await res.json()) as T, source: "api", fetchedAt: new Date().toISOString() };
@@ -273,10 +297,8 @@ export function adaptRecommendationResponse(r: RecommendationResponse): Recommen
   const ranked = r.rankedCrops || [];
   const mapCrop = (rc: RankedCropResponse): CropRecommendation => {
     const confidencePct = rc.probability != null ? Math.round(rc.probability * 100) : null;
-    let suitability = "Recommended";
-    if (confidencePct !== null) {
-      suitability = confidencePct >= 70 ? "High" : confidencePct >= 40 ? "Moderate" : "Low";
-    }
+    const suitability =
+      confidencePct !== null ? `${confidencePct}% Uncalibrated Model Score` : "Model Candidate";
     const guide = getCropCultivationGuide(rc.crop);
     return {
       crop: rc.crop,
@@ -299,7 +321,7 @@ export function adaptRecommendationResponse(r: RecommendationResponse): Recommen
           return {
             crop: r.recommendedCrop,
             confidencePct: null,
-            suitability: "Recommended",
+            suitability: "Model Candidate",
             waterRequirement: guide?.waterRequirement ?? null,
             growthDurationDays: guide?.durationDays ?? null,
             complexity: guide?.category ? `${guide.category}` : null,
@@ -326,8 +348,9 @@ export function adaptRecommendationResponse(r: RecommendationResponse): Recommen
     else missing.push("Temperature");
     if (feats.humidity != null) used.push("Humidity");
     else missing.push("Humidity");
-    if (feats.rainfall != null) used.push("Rainfall");
-    else missing.push("Rainfall");
+    const seasonalRain = feats.seasonalRainfallMm ?? feats.rainfall;
+    if (seasonalRain != null) used.push("Seasonal rainfall");
+    else missing.push("Seasonal rainfall");
   }
 
   const totalFeatures = 7;
@@ -348,7 +371,7 @@ export function adaptRecommendationResponse(r: RecommendationResponse): Recommen
     reliability,
     explanation:
       r.note ||
-      `Recommended based on ${r.modelName || "ML model"} analysis of your soil and environmental factors.`,
+      `Uncalibrated ${r.modelName || "ML model"} score derived from benchmark training data; not a calibrated probability or field guarantee.`,
     factors: [],
     dataUsed: used,
     dataMissing: missing,
@@ -357,34 +380,137 @@ export function adaptRecommendationResponse(r: RecommendationResponse): Recommen
 
 /**
  * User service adapters.
- * Spring Boot does not manage passwords; only profile information is exchanged.
+ * Important: The Spring Boot backend currently implements profile lookup/creation
+ * (`POST /api/users`, `GET /api/users?email=...`) without password hashing,
+ * credential verification, session tokens, or authorization.
+ * Backend profile operations and Demo Mode sessions are kept strictly separated.
  */
 export const usersService = {
-  create: async (request: CreateUserRequest): Promise<Envelope<UserProfile>> => {
+  /**
+   * Looks up a registered farmer profile on the Spring Boot backend by email.
+   * - Requires API_BASE to be configured.
+   * - Distinguishes verified RESOURCE_NOT_FOUND (account does not exist) from
+   *   missing /api/users endpoints (HTTP 404 HTML/NOT_FOUND) and network errors.
+   */
+  loginBackendProfile: async (email: string): Promise<UserProfile> => {
+    const cleanEmail = email.trim();
     if (!API_BASE) {
-      return demo<UserProfile>({
-        id: "user-demo-1",
-        fullName: request.fullName,
+      throw new ApiError({
+        status: 503,
+        error: "BACKEND_NOT_CONFIGURED",
+        message:
+          "No Spring Boot backend URL (VITE_AGRISMART_API_URL) is configured in this environment. Use explicit Demo Mode to preview locally.",
+      });
+    }
+    try {
+      return await usersApi.getByEmail(cleanEmail);
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.isEndpointMissing) {
+        throw new ApiError({
+          status: 503,
+          error: "AUTH_ENDPOINT_UNAVAILABLE",
+          message:
+            "The backend /api/users endpoint is not available at the configured API URL. Account existence could not be verified.",
+        });
+      }
+      throw err;
+    }
+  },
+
+  /**
+   * Creates a farmer profile record on the Spring Boot backend.
+   * Never sends or stores plaintext passwords.
+   */
+  registerBackendProfile: async (request: CreateUserRequest): Promise<UserProfile> => {
+    if (!API_BASE) {
+      throw new ApiError({
+        status: 503,
+        error: "BACKEND_NOT_CONFIGURED",
+        message:
+          "No Spring Boot backend URL (VITE_AGRISMART_API_URL) is configured in this environment. Use explicit Demo Mode to preview locally.",
+      });
+    }
+    try {
+      return await usersApi.create({
+        fullName: request.fullName.trim(),
+        email: request.email.trim(),
+        phoneNumber: request.phoneNumber?.trim() || null,
+      });
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.isEndpointMissing) {
+        throw new ApiError({
+          status: 503,
+          error: "AUTH_ENDPOINT_UNAVAILABLE",
+          message:
+            "The backend /api/users endpoint is not available at the configured API URL. Could not create a backend profile.",
+        });
+      }
+      throw err;
+    }
+  },
+
+  /**
+   * Starts an explicitly labelled, unauthenticated local Demo Mode session.
+   * Never fabricates a backend UUID and never accepts or stores passwords.
+   */
+  startDemoSession: (input?: {
+    email?: string | undefined;
+    fullName?: string | undefined;
+    phoneNumber?: string | null | undefined;
+  }): UserSession => {
+    const rawEmail = input?.email?.trim() || "";
+    const existingDemo = rawEmail ? findDemoProfile(rawEmail) : null;
+    const resolvedEmail = rawEmail || existingDemo?.email || "demo.farmer@agrismart.local";
+    const resolvedName =
+      input?.fullName?.trim() ||
+      existingDemo?.fullName ||
+      (rawEmail ? rawEmail.split("@")[0] : "") ||
+      "Demo Farmer";
+    const resolvedPhone = input?.phoneNumber?.trim() ?? existingDemo?.phoneNumber ?? null;
+
+    saveDemoProfile({
+      email: resolvedEmail,
+      fullName: resolvedName,
+      phoneNumber: resolvedPhone,
+    });
+
+    const session: UserSession = {
+      email: resolvedEmail,
+      fullName: resolvedName,
+      phoneNumber: resolvedPhone,
+      authMode: "demo",
+    };
+    setActiveFarmId(null);
+    setUser(session);
+    return session;
+  },
+
+  create: async (request: CreateUserRequest): Promise<Envelope<UserProfile>> => {
+    if (shouldUseDemoAdapters()) {
+      const session = usersService.startDemoSession({
         email: request.email,
-        phoneNumber: request.phoneNumber ?? null,
+        fullName: request.fullName,
+        phoneNumber: request.phoneNumber,
+      });
+      return demo<UserProfile>({
+        id: "demo-preview-only",
+        fullName: session.fullName ?? request.fullName,
+        email: session.email,
+        phoneNumber: session.phoneNumber ?? null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
     }
-    const user = await usersApi.create({
-      fullName: request.fullName,
-      email: request.email,
-      phoneNumber: request.phoneNumber ?? null,
-    });
+    const user = await usersService.registerBackendProfile(request);
     return { data: user, source: "api", fetchedAt: new Date().toISOString() };
   },
 
   getById: async (id: string): Promise<Envelope<UserProfile>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
       return demo<UserProfile>({
         id,
         fullName: "Demo Farmer",
-        email: "farmer@example.com",
+        email: "demo.farmer@agrismart.local",
         phoneNumber: null,
       });
     }
@@ -393,15 +519,16 @@ export const usersService = {
   },
 
   getByEmail: async (email: string): Promise<Envelope<UserProfile | null>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
+      const saved = findDemoProfile(email);
       return demo<UserProfile>({
-        id: "user-demo-1",
-        fullName: email.split("@")[0] || "Demo Farmer",
+        id: "demo-preview-only",
+        fullName: saved?.fullName || email.split("@")[0] || "Demo Farmer",
         email,
-        phoneNumber: null,
+        phoneNumber: saved?.phoneNumber ?? null,
       });
     }
-    const user = await usersApi.getByEmail(email);
+    const user = await usersService.loginBackendProfile(email);
     return { data: user, source: "api", fetchedAt: new Date().toISOString() };
   },
 };
@@ -414,7 +541,7 @@ export const farmsService = {
   current: () => farmsService.getActiveFarm(),
 
   getActiveFarm: async (): Promise<Envelope<Farm | null>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
       return demo<Farm>(demoFarm);
     }
     const sessionUser = loadUser();
@@ -431,7 +558,7 @@ export const farmsService = {
         };
       } catch (err) {
         // If activeFarmId not found on server, clear and fall through to user's list
-        if (err instanceof ApiError && err.isNotFound) {
+        if (err instanceof ApiError && err.isResourceNotFound) {
           setActiveFarmId(null);
         } else {
           throw err;
@@ -439,9 +566,9 @@ export const farmsService = {
       }
     }
 
-    // 2. If UserSession has backend user ID, list farms for that user
-    let effectiveUserId = sessionUser?.id;
-    if (!effectiveUserId && sessionUser?.email) {
+    // 2. If UserSession has a verified backend user ID, list farms for that user
+    let effectiveUserId = isBackendUserSession(sessionUser) ? sessionUser?.id : undefined;
+    if (!effectiveUserId && sessionUser?.email && sessionUser.authMode !== "demo") {
       try {
         const resolvedUser = await usersApi.getByEmail(sessionUser.email);
         if (resolvedUser?.id) {
@@ -452,6 +579,7 @@ export const farmsService = {
             email: resolvedUser.email,
             fullName: resolvedUser.fullName || sessionUser?.fullName,
             phoneNumber: resolvedUser.phoneNumber ?? sessionUser?.phoneNumber,
+            authMode: "backend",
           });
         }
       } catch (err) {
@@ -491,11 +619,12 @@ export const farmsService = {
   },
 
   list: async (userId?: string): Promise<Envelope<Farm[]>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
       return demo<Farm[]>([demoFarm]);
     }
     const sessionUser = loadUser();
-    const effectiveUserId = userId || sessionUser?.id;
+    const effectiveUserId =
+      userId || (isBackendUserSession(sessionUser) ? sessionUser?.id : undefined);
 
     if (effectiveUserId) {
       try {
@@ -521,7 +650,7 @@ export const farmsService = {
   },
 
   getById: async (id: string): Promise<Envelope<Farm | null>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
       return demo<Farm>(demoFarm);
     }
     const sessionUser = loadUser();
@@ -533,7 +662,7 @@ export const farmsService = {
         fetchedAt: new Date().toISOString(),
       };
     } catch (err) {
-      if (err instanceof ApiError && err.isNotFound) {
+      if (err instanceof ApiError && err.isResourceNotFound) {
         return { data: null, source: "api", fetchedAt: new Date().toISOString() };
       }
       console.warn(`Failed to get farm ${id} via API:`, err);
@@ -542,7 +671,7 @@ export const farmsService = {
   },
 
   create: async (request: CreateFarmRequest, ownerName?: string): Promise<Envelope<Farm>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
       const fakeFarm: Farm = {
         ...demoFarm,
         ...request,
@@ -574,7 +703,7 @@ export const farmsService = {
     request?: UpdateFarmRequest,
     ownerName?: string,
   ): Promise<Envelope<Farm>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
       if (typeof patchOrId === "object") {
         return demo<Farm>({ ...demoFarm, ...patchOrId });
       }
@@ -620,7 +749,7 @@ export const weatherService = {
         );
         return {
           data: live,
-          source: "api",
+          source: live.isLive ? "api" : "demo",
           fetchedAt: live.observedAt,
         };
       } catch (err) {
@@ -628,8 +757,8 @@ export const weatherService = {
       }
     }
 
-    // 2. Query Spring Boot backend if API_BASE or farmId is available
-    if (API_BASE && farmId) {
+    // 2. Query Spring Boot backend if API_BASE is active and not in demo session
+    if (!shouldUseDemoAdapters() && farmId) {
       try {
         const obs = await apiGet<{
           temperature: number;
@@ -672,7 +801,7 @@ export const weatherService = {
             const live = await fetchOpenMeteoWeather(top.latitude, top.longitude, top.label);
             return {
               data: live,
-              source: "api",
+              source: live.isLive ? "api" : "demo",
               fetchedAt: live.observedAt,
             };
           }
@@ -693,7 +822,7 @@ export const weatherService = {
     const live = await fetchOpenMeteoWeather(latitude, longitude, locationName);
     return {
       data: live,
-      source: "api",
+      source: live.isLive ? "api" : "demo",
       fetchedAt: live.observedAt,
     };
   },
@@ -707,7 +836,7 @@ export const weatherService = {
     const live = await fetchOpenMeteoWeather(top.latitude, top.longitude, top.label);
     return {
       data: live,
-      source: "api",
+      source: live.isLive ? "api" : "demo",
       fetchedAt: live.observedAt,
     };
   },
@@ -723,7 +852,7 @@ export const weatherService = {
 
 export const soilService = {
   getStatus: async (farmId?: string): Promise<Envelope<SoilStatus>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
       const reports = await soilReportsService.list();
       const latest = reports.data[0];
       return {
@@ -760,7 +889,7 @@ export const soilService = {
         fetchedAt: new Date().toISOString(),
       };
     } catch (err) {
-      if (err instanceof ApiError && err.isNotFound) {
+      if (err instanceof ApiError && err.isResourceNotFound) {
         return {
           data: {
             hasReport: false,
@@ -779,7 +908,7 @@ export const soilService = {
 
 export const providersService = {
   list: async (): Promise<Envelope<Provider[]>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
       return demo(demoProviders);
     }
     try {
@@ -797,7 +926,7 @@ export const providersService = {
   },
 
   byId: async (id: string): Promise<Envelope<Provider | null>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
       const all = await providersService.list();
       return { ...all, data: all.data.find((p) => p.id === id) ?? null };
     }
@@ -809,7 +938,7 @@ export const providersService = {
         fetchedAt: new Date().toISOString(),
       };
     } catch (err) {
-      if (err instanceof ApiError && err.isNotFound) {
+      if (err instanceof ApiError && err.isResourceNotFound) {
         return {
           data: null,
           source: "api",
@@ -824,7 +953,7 @@ export const providersService = {
 
 export const appointmentsService = {
   list: async (farmId?: string): Promise<Envelope<Appointment[]>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
       return demo(demoAppointments);
     }
     const effectiveFarmId = farmId ?? getActiveFarmId();
@@ -851,7 +980,7 @@ export const appointmentsService = {
   },
 
   byId: async (id: string): Promise<Envelope<Appointment | null>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
       const all = await appointmentsService.list();
       return { ...all, data: all.data.find((a) => a.id === id) ?? null };
     }
@@ -863,7 +992,7 @@ export const appointmentsService = {
         fetchedAt: new Date().toISOString(),
       };
     } catch (err) {
-      if (err instanceof ApiError && err.isNotFound) {
+      if (err instanceof ApiError && err.isResourceNotFound) {
         return {
           data: null,
           source: "api",
@@ -880,7 +1009,7 @@ export const appointmentsService = {
       farmId?: string | undefined;
     },
   ): Promise<Envelope<Appointment | null>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
       return {
         data: null,
         source: "demo",
@@ -921,7 +1050,7 @@ export const appointmentsService = {
 
 export const soilReportsService = {
   list: async (farmId?: string): Promise<Envelope<SoilReport[]>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
       return demo(demoReports);
     }
     const effectiveFarmId = farmId ?? getActiveFarmId();
@@ -947,7 +1076,7 @@ export const soilReportsService = {
   },
 
   byId: async (id: string): Promise<Envelope<SoilReport | null>> => {
-    if (!API_BASE) {
+    if (shouldUseDemoAdapters()) {
       const all = await soilReportsService.list();
       return { ...all, data: all.data.find((r) => r.id === id) ?? null };
     }
@@ -959,7 +1088,7 @@ export const soilReportsService = {
         fetchedAt: new Date().toISOString(),
       };
     } catch (err) {
-      if (err instanceof ApiError && err.isNotFound) {
+      if (err instanceof ApiError && err.isResourceNotFound) {
         return {
           data: null,
           source: "api",
@@ -973,15 +1102,37 @@ export const soilReportsService = {
 };
 
 export const recommendationsService = {
-  get: async (farmId: string): Promise<Envelope<RecommendationResult>> => {
-    if (!API_BASE) {
-      return demo(demoRecommendation);
-    }
+  get: async (
+    farmId: string,
+    seasonalRainfallMm?: number,
+  ): Promise<Envelope<RecommendationResult>> => {
     if (!farmId) {
       throw new Error("farmId is required to fetch recommendations.");
     }
+    if (
+      seasonalRainfallMm === undefined ||
+      typeof seasonalRainfallMm !== "number" ||
+      !Number.isFinite(seasonalRainfallMm)
+    ) {
+      throw new ApiError({
+        status: 422,
+        error: "SEASONAL_RAINFALL_REQUIRED",
+        errorCode: "SEASONAL_RAINFALL_REQUIRED",
+        message:
+          "Seasonal cumulative rainfall (seasonalRainfallMm in mm) is required for ML crop prediction. Hourly weather precipitation is never substituted.",
+      });
+    }
+    if (shouldUseDemoAdapters()) {
+      throw new ApiError({
+        status: 503,
+        error: "BACKEND_NOT_CONFIGURED",
+        errorCode: "BACKEND_NOT_CONFIGURED",
+        message:
+          "Spring Boot recommendation endpoint is not configured in local preview mode. Active farm plan recommendations are evaluated directly on the client.",
+      });
+    }
     try {
-      const response = await recommendationsApi.get(farmId);
+      const response = await recommendationsApi.get(farmId, seasonalRainfallMm);
       return {
         data: adaptRecommendationResponse(response),
         source: "api",
@@ -998,16 +1149,35 @@ export const recommendationsService = {
 
   generate: async (
     farmId: string,
-    weather?: WeatherObservation,
+    request: RecommendationRequest,
   ): Promise<Envelope<RecommendationResult>> => {
-    if (!API_BASE) {
-      return demo(demoRecommendation);
-    }
     if (!farmId) {
       throw new Error("farmId is required to generate recommendations.");
     }
+    if (
+      !request ||
+      typeof request.seasonalRainfallMm !== "number" ||
+      !Number.isFinite(request.seasonalRainfallMm)
+    ) {
+      throw new ApiError({
+        status: 422,
+        error: "SEASONAL_RAINFALL_REQUIRED",
+        errorCode: "SEASONAL_RAINFALL_REQUIRED",
+        message:
+          "Seasonal cumulative rainfall (seasonalRainfallMm in mm) is required for ML crop prediction. Hourly weather precipitation is never substituted.",
+      });
+    }
+    if (shouldUseDemoAdapters()) {
+      throw new ApiError({
+        status: 503,
+        error: "BACKEND_NOT_CONFIGURED",
+        errorCode: "BACKEND_NOT_CONFIGURED",
+        message:
+          "Spring Boot recommendation endpoint is not configured in local preview mode. Active farm plan recommendations are evaluated directly on the client.",
+      });
+    }
     try {
-      const response = await recommendationsApi.generate(farmId, weather);
+      const response = await recommendationsApi.generate(farmId, request);
       return {
         data: adaptRecommendationResponse(response),
         source: "api",
@@ -1086,23 +1256,96 @@ export const mlEvaluationService = {
 
 export const predictionService = {
   /** Calls the app's /api/predict route (FastAPI when configured, otherwise the exported forest). */
-  predict: async (input: {
-    N: number;
-    P: number;
-    K: number;
-    temperature: number;
-    humidity: number;
-    ph: number;
-    rainfall: number;
-  }): Promise<CropPrediction> => {
+  predict: async (input: MlPredictionFeatures): Promise<CropPrediction> => {
     const res = await fetch("/api/predict", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
     });
-    const body = await res.json();
-    if (!res.ok) throw new Error(body?.error ?? `Prediction failed (${res.status})`);
-    return body as CropPrediction;
+    const body = (await res.json().catch(() => null)) as
+      (CropPrediction & { error?: string }) | null;
+    if (!res.ok || !body) {
+      throw new Error(body?.error ?? `Prediction service error (${res.status})`);
+    }
+    return body;
+  },
+};
+
+export class SoilAnalysisServiceError extends Error {
+  readonly status: number;
+  readonly errorCode: string;
+
+  constructor(message: string, status: number, errorCode = "SOIL_ANALYSIS_ERROR") {
+    super(message);
+    this.name = "SoilAnalysisServiceError";
+    this.status = status;
+    this.errorCode = errorCode;
+  }
+}
+
+export const soilAnalysisService = {
+  /**
+   * Uploads a soil photograph to POST /api/soil-analysis for supervised texture classification.
+   * Never falls back to fabricated or hash-based predictions on error.
+   */
+  analyzeImage: async (
+    file: File | Blob,
+    filename?: string,
+  ): Promise<import("./types").SoilImageAnalysisResult> => {
+    const formData = new FormData();
+    if (typeof File !== "undefined" && file instanceof File) {
+      formData.append("image", file, file.name);
+    } else {
+      formData.append("image", file, filename ?? "soil-upload.jpg");
+    }
+
+    let res: Response;
+    try {
+      res = await fetch("/api/soil-analysis", {
+        method: "POST",
+        body: formData,
+      });
+    } catch {
+      throw new SoilAnalysisServiceError(
+        "Unable to reach the Soil Analyzer endpoint. Check your connection and retry.",
+        0,
+        "NETWORK_ERROR",
+      );
+    }
+
+    const body = (await res.json().catch(() => null)) as
+      (import("./types").SoilImageAnalysisResult & { error?: string; errorCode?: string }) | null;
+
+    if (!res.ok || !body || typeof body.status !== "string") {
+      throw new SoilAnalysisServiceError(
+        body?.error ?? `Soil classification failed (HTTP ${res.status}).`,
+        res.status,
+        body?.errorCode ?? "SOIL_ANALYSIS_ERROR",
+      );
+    }
+
+    return body;
+  },
+};
+
+export const historyService = {
+  list: (): HistoryEntry[] => loadHistory(),
+  getById: (id: string): HistoryEntry | null => {
+    const cleanId = id?.trim();
+    if (!cleanId) return null;
+    return loadHistory().find((entry) => entry.id === cleanId) ?? null;
+  },
+  save: (entry: HistoryEntry, currentUser?: UserSession | null): void => {
+    saveHistoryEntry(entry, currentUser);
+  },
+  deleteRecord: async (
+    id: string,
+    currentUser?: UserSession | null,
+  ): Promise<DeleteHistoryResult> => {
+    return deleteHistoryRecord(id, currentUser);
+  },
+  clearAll: (): void => {
+    clearAllHistory();
   },
 };
 

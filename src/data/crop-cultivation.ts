@@ -47,7 +47,7 @@ export const ALL_ML_CROPS: string[] = [
 ];
 
 export const ALL_CULTIVATION_GUIDES: CropCultivationGuide[] = ALL_ML_CROPS.map(
-  (id) => CROP_CULTIVATION_DATABASE[id]!
+  (id) => CROP_CULTIVATION_DATABASE[id]!,
 );
 
 /**
@@ -56,33 +56,29 @@ export const ALL_CULTIVATION_GUIDES: CropCultivationGuide[] = ALL_ML_CROPS.map(
  */
 export function getCropCultivationGuide(cropNameOrId: string): CropCultivationGuide | null {
   if (!cropNameOrId) return null;
-  const normalized = cropNameOrId
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z]/g, "");
 
-  // Direct match
-  if (CROP_CULTIVATION_DATABASE[normalized]) {
-    return CROP_CULTIVATION_DATABASE[normalized];
-  }
-
-  // Handle common aliases or display names
   const aliasMap: Record<string, string> = {
     paddy: "rice",
     chana: "chickpea",
+    chickpeas: "chickpea",
     bengalgram: "chickpea",
     arhar: "pigeonpeas",
     tur: "pigeonpeas",
     redgram: "pigeonpeas",
+    pigeonpea: "pigeonpeas",
     urad: "blackgram",
     uradbean: "blackgram",
+    blackgrams: "blackgram",
     moong: "mungbean",
+    mungbeans: "mungbean",
     greengram: "mungbean",
     matki: "mothbeans",
     mothbean: "mothbeans",
     masoor: "lentil",
+    lentils: "lentil",
     rajma: "kidneybeans",
     rajmash: "kidneybeans",
+    kidneybean: "kidneybeans",
     corn: "maize",
     cantaloupe: "muskmelon",
     kharbooja: "muskmelon",
@@ -93,12 +89,47 @@ export function getCropCultivationGuide(cropNameOrId: string): CropCultivationGu
     tarbooz: "watermelon",
     kapas: "cotton",
     pat: "jute",
+    grape: "grapes",
   };
 
-  const mapped = aliasMap[normalized];
-  if (mapped && CROP_CULTIVATION_DATABASE[mapped]) {
-    return CROP_CULTIVATION_DATABASE[mapped];
+  const candidates = [cropNameOrId, cropNameOrId.split("(")[0] ?? ""];
+  for (const raw of candidates) {
+    const normalized = raw
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z]/g, "");
+    if (!normalized) continue;
+
+    if (CROP_CULTIVATION_DATABASE[normalized]) {
+      return CROP_CULTIVATION_DATABASE[normalized];
+    }
+
+    const mapped = aliasMap[normalized];
+    if (mapped && CROP_CULTIVATION_DATABASE[mapped]) {
+      return CROP_CULTIVATION_DATABASE[mapped];
+    }
+
+    const byDisplay = ALL_CULTIVATION_GUIDES.find(
+      (g) => g.displayName.toLowerCase().replace(/[^a-z]/g, "") === normalized,
+    );
+    if (byDisplay) {
+      return byDisplay;
+    }
   }
 
   return null;
+}
+
+/**
+ * Returns the canonical URL slug for `/cultivation/$crop` for any crop id or display name.
+ */
+export function getCropGuideSlug(cropNameOrId: string): string {
+  const guide = getCropCultivationGuide(cropNameOrId);
+  if (guide) return guide.crop;
+  return (
+    (cropNameOrId.split("(")[0] ?? cropNameOrId)
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "") || cropNameOrId.toLowerCase()
+  );
 }

@@ -30,4 +30,9 @@ public record ApiErrorResponse(
     public static ApiErrorResponse ofValidation(int status, String error, String message, String path, Map<String, String> fieldErrors) {
         return new ApiErrorResponse(Instant.now().toString(), status, error, message, path, fieldErrors, fieldErrors);
     }
+
+    @JsonProperty("errorCode")
+    public String errorCode() {
+        return error;
+    }
 }

@@ -1,5 +1,7 @@
 package com.agrismart.ml.client;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.List;
 
 /**
@@ -8,6 +10,7 @@ import java.util.List;
  * Adheres strictly to the schema defined in ml/api/main.py:
  * { "crop": str, "ranked": [...], "model": str, "featuresUsed": [...], "classCount": int, "note": str }
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record FastApiPredictResponse(
         String crop,
         List<FastApiRankedCrop> ranked,

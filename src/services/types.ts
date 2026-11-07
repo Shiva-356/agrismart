@@ -6,8 +6,10 @@ export type CropPrediction = {
   ranked: { crop: string; probability: number }[];
   model: string | null;
   runtime: "fastapi" | "exported-forest";
-  treeCount?: number;
-  note?: string;
+  scoringMethod?: string | undefined;
+  calibrated?: boolean | undefined;
+  treeCount?: number | undefined;
+  note?: string | undefined;
 };
 
 export type Envelope<T> = {
@@ -123,7 +125,15 @@ export type FeatureContribution = { feature: string; contribution: number };
 
 export type CropRecommendation = {
   crop: string;
+  canonicalCropId?: string | undefined;
+  overallRank?: number | null | undefined;
+  source?: "HYBRID" | "ML MODEL" | "RULE-BASED" | "DEMO / ILLUSTRATIVE" | undefined;
   confidencePct: number | null;
+  ruleCompatibilityPct?: number | null | undefined;
+  mlUncalibratedScorePct?: number | null | undefined;
+  hybridRationale?: string | null | undefined;
+  agreementState?: string | null | undefined;
+  hardConstraintTriggered?: boolean | undefined;
   suitability: string;
   waterRequirement: string | null;
   growthDurationDays: number | null;
@@ -135,6 +145,10 @@ export type CropRecommendation = {
 export type RecommendationResult = {
   top: CropRecommendation;
   alternatives: CropRecommendation[];
+  mode?: "hybrid" | "demo-hybrid" | "rule-only" | "ml-only" | "none" | undefined;
+  sourcesUsed?: string[] | undefined;
+  mlStatus?: string | undefined;
+  mlStatusMessage?: string | undefined;
   dataCompletenessPct: number | null;
   reliability: "High" | "Moderate" | "Low" | null;
   explanation: string;
@@ -229,4 +243,50 @@ export type Notification = {
   body: string;
   at: string;
   read: boolean;
+};
+
+export type SoilTextureClass = "Sandy" | "Clayey" | "Loamy" | "Silty";
+
+export type SoilClassScoreItem = {
+  soilClass: SoilTextureClass;
+  agriSoilType: "Clay" | "Sandy" | "Loamy" | "Silty" | "Clay Loam";
+  probability: number;
+  percentage: number;
+};
+
+export type SoilImageAnalysisResult = {
+  status: "classified" | "uncertain" | "unsupported_input";
+  predictedClass: SoilTextureClass | null;
+  agriSoilType: "Clay" | "Sandy" | "Loamy" | "Silty" | "Clay Loam" | null;
+  closestCandidate: SoilTextureClass | null;
+  confidence: number | null;
+  confidencePct: number | null;
+  calibrated: boolean;
+  scoringMethod: string;
+  scores: SoilClassScoreItem[];
+  explanation: string;
+  visualIndicators: string | null;
+  fieldGuidance: string | null;
+  rejectionReasonCode:
+    | "VEGETATION_DOMINATED"
+    | "NON_SOIL_SCENE"
+    | "POOR_IMAGE_QUALITY"
+    | "OUT_OF_DISTRIBUTION_OBJECT"
+    | "LOW_CONFIDENCE_AMBIGUOUS"
+    | null;
+  diagnostics: {
+    manifoldSimilarity: number;
+    centroidSimilarity: number;
+    normalizedEntropy: number;
+    imageWidth: number;
+    imageHeight: number;
+    format: "jpeg" | "png";
+  };
+  model: {
+    name: string;
+    backbone: string;
+    runtime: "local-tfjs-server" | "fastapi";
+    supportedClasses: SoilTextureClass[];
+  };
+  caveats: string[];
 };

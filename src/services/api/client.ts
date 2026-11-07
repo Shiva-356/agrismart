@@ -122,20 +122,89 @@ export class ApiError extends Error {
   }
 
   /**
-   * True if business prerequisites are not satisfied (HTTP 422).
+   * True ONLY when the Spring Boot backend explicitly confirmed that a domain
+   * entity does not exist (GlobalExceptionHandler -> error: "RESOURCE_NOT_FOUND").
+   * Never true for generic HTML 404s or unmounted /api/* routes.
+   */
+  get isResourceNotFound(): boolean {
+    return this.error === "RESOURCE_NOT_FOUND";
+  }
+
+  /**
+   * True when HTTP 404 was returned by an unmounted route, static host, or
+   * missing endpoint rather than a verified domain-entity lookup miss.
+   */
+  get isEndpointMissing(): boolean {
+    return this.status === 404 && !this.isResourceNotFound;
+  }
+
+  /**
+   * True if business prerequisites or ML feature requirements are not satisfied (HTTP 422).
+   * Never misclassified as a service outage (`isUnavailable`).
    */
   get isUnprocessable(): boolean {
+    const code = this.errorCode || this.error;
     return (
       this.status === 422 ||
-      this.error === "NO_VERIFIED_SOIL_REPORT" ||
-      this.error === "WEATHER_LOCATION_UNRESOLVED"
+      code === "NO_VERIFIED_SOIL_REPORT" ||
+      code === "SOIL_FEATURES_INCOMPLETE" ||
+      code === "WEATHER_LOCATION_UNRESOLVED" ||
+      code === "WEATHER_FEATURES_INCOMPLETE" ||
+      code === "SEASONAL_RAINFALL_REQUIRED" ||
+      code === "ML_INPUT_OUT_OF_RANGE" ||
+      code === "ML_INPUT_INVALID"
     );
   }
 }
 
 /**
+ * Checks whether the app is executing inside a hosted preview/remote deployment.
+ * Evaluates consistently across both SSR (Node.js/server) and client (browser)
+ * to avoid hydration mismatches.
+ */
+export function isHostedPreview(): boolean {
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    return (
+      hostname.endsWith(".run.app") ||
+      hostname.includes("preview") ||
+      (window.location.protocol === "https:" &&
+        hostname !== "localhost" &&
+        hostname !== "127.0.0.1")
+    );
+  }
+
+  // Server-side (SSR / Node.js runtime): detect Cloud Run / hosted container environment
+  if (typeof process !== "undefined" && process.env) {
+    const appUrl = (process.env["APP_URL"] || "") as string;
+    const allowedHosts = (process.env["NG_ALLOWED_HOSTS"] || "") as string;
+    const kConfig = (process.env["K_CONFIGURATION"] || "") as string;
+    const kRev = (process.env["K_REVISION"] || "") as string;
+
+    if (
+      appUrl.includes(".run.app") ||
+      allowedHosts.includes(".run.app") ||
+      kConfig.startsWith("ais-") ||
+      kRev.startsWith("ais-")
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Default local Spring Boot port matching backend/src/main/resources/application.yml
+ * (`server.port: ${SERVER_PORT:8080}`).
+ */
+export const DEFAULT_LOCAL_API_URL = "http://localhost:8080";
+
+/**
  * Resolves the configured base URL for the Spring Boot backend.
- * Falls back to http://localhost:8080 during local development.
+ * - If VITE_AGRISMART_API_URL is configured, uses it directly.
+ * - In local development (localhost / 127.0.0.1 / non-hosted preview), defaults to http://localhost:8080.
+ * - In hosted preview without an explicit backend URL, returns an empty string so the app safely operates in demo mode.
  * Normalizes any trailing slashes.
  */
 export function getApiBaseUrl(): string {
@@ -146,7 +215,12 @@ export function getApiBaseUrl(): string {
   if (envUrl && envUrl.trim().length > 0) {
     return envUrl.trim().replace(/\/+$/, "");
   }
-  return "http://localhost:8081";
+  // In hosted preview environments without a configured remote backend URL,
+  // do NOT attempt to connect to localhost:8080 (which would trigger mixed content/network errors).
+  if (isHostedPreview()) {
+    return "";
+  }
+  return DEFAULT_LOCAL_API_URL;
 }
 
 export const API_BASE_URL = getApiBaseUrl();
